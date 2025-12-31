@@ -9,9 +9,6 @@ permissions:
   packages: write
   pull-requests: write
 
-env:
-  NODE_VERSION: '20'
-
 jobs:
   release:
     name: Release
@@ -23,21 +20,22 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
-      - name: Setup Node.js
+      - name: Setup Node.js (for npm publish)
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Build
-        run: pnpm run build
+        run: bun run build
 
       - name: Configure Git
         run: |
@@ -72,8 +70,8 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "Current version: $CURRENT_VERSION"
 
-          # Bump version
-          NEW_VERSION=$(pnpm version $BUMP_TYPE --no-git-tag-version)
+          # Bump version using npm (bun uses npm for this)
+          NEW_VERSION=$(npm version $BUMP_TYPE --no-git-tag-version)
           NEW_VERSION=${NEW_VERSION#v}
           echo "New version: $NEW_VERSION"
 
@@ -123,7 +121,7 @@ jobs:
             ## Installation
 
             ```bash
-            pnpm add @freelance-and-me/sdk@${{ steps.bump.outputs.version }}
+            bun add @freelance-and-me/sdk@${{ steps.bump.outputs.version }}
             ```
           draft: false
           prerelease: false
@@ -132,7 +130,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to npm
-        run: pnpm publish --access public --no-git-checks
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         continue-on-error: true

@@ -1,0 +1,23 @@
+# bunfig.toml - Configuration Bun pour @freelance-and-me/sdk
+
+[install]
+# Registry npm par défaut
+registry = "https://registry.npmjs.org"
+
+# Installer les devDependencies
+dev = true
+
+# Gérer les peer dependencies
+peer = true
+
+# Note: Bun uses its default global cache automatically
+# No need to specify cache directory
+
+[run]
+# Afficher les commandes
+silent = false
+
+[test]
+# Configuration tests
+coverage = true
+coverageDir = "coverage"
