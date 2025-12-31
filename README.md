@@ -13,6 +13,7 @@
 
 <p align="center">
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white" alt="TypeScript"></a>
+  <a href="https://bun.sh"><img src="https://img.shields.io/badge/Bun-%3E%3D1.0-f9f1e1?logo=bun&logoColor=black" alt="Bun"></a>
   <a href="#"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white" alt="Node.js"></a>
   <a href="#"><img src="https://img.shields.io/badge/ESM%20%7C%20CJS-supported-8A2BE2" alt="ESM | CJS"></a>
   <a href="#"><img src="https://img.shields.io/badge/dependencies-0-success" alt="Zero Dependencies"></a>
@@ -39,7 +40,10 @@
 ## Installation
 
 ```bash
-# pnpm (recommended)
+# bun (recommended)
+bun add @freelance-and-me/sdk
+
+# pnpm
 pnpm add @freelance-and-me/sdk
 
 # npm
@@ -295,28 +299,28 @@ import type {
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Build
-pnpm run build
+bun run build
 
 # Run tests
-pnpm run test
+bun test
 
 # Run tests with coverage
-pnpm run test:coverage
+bun test --coverage
 
 # Lint
-pnpm run lint
+bun run lint
 
 # Format
-pnpm run format
+bun run format
 
 # Type check
-pnpm run typecheck
+bun run typecheck
 
 # Generate documentation
-pnpm run docs
+bun run docs
 ```
 
 ## License
