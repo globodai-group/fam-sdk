@@ -1,0 +1,91 @@
+{
+  "name": "@freelance-and-me/sdk",
+  "version": "0.0.0",
+  "description": "Official TypeScript SDK for the Freelance-and-Me API",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./webhooks": {
+      "types": "./dist/webhooks/index.d.ts",
+      "import": "./dist/webhooks/index.mjs",
+      "require": "./dist/webhooks/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "docs": "typedoc",
+    "knip": "knip",
+    "madge": "madge --circular --extensions ts src/",
+    "check": "pnpm run typecheck && pnpm run lint && pnpm run format:check",
+    "ci:check": "pnpm run check && pnpm run knip && pnpm run madge",
+    "ci:test": "pnpm run test:coverage",
+    "ci:build": "pnpm run build",
+    "prepublishOnly": "pnpm run ci:check && pnpm run ci:test && pnpm run ci:build",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "freelance-and-me",
+    "mangopay",
+    "sdk",
+    "api",
+    "typescript",
+    "payments"
+  ],
+  "author": "Freelance-and-Me",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/globodai-group/freelance-and-me-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/globodai-group/freelance-and-me-sdk/issues"
+  },
+  "homepage": "https://github.com/globodai-group/freelance-and-me-sdk#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@9.15.1",
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.2",
+    "@vitest/coverage-v8": "^2.1.8",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import-x": "^4.6.1",
+    "eslint-plugin-jsdoc": "^50.6.1",
+    "eslint-plugin-unicorn": "^56.0.1",
+    "husky": "^9.1.7",
+    "knip": "^5.41.1",
+    "lint-staged": "^15.2.11",
+    "madge": "^8.0.0",
+    "prettier": "^3.4.2",
+    "tsup": "^8.3.5",
+    "typedoc": "^0.27.6",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.2",
+    "vitest": "^2.1.8"
+  }
+}
