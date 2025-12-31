@@ -14,4 +14,5 @@ export default defineConfig({
   minify: false,
   target: 'es2022',
   outDir: 'dist',
+  tsconfig: 'tsconfig.build.json',
 })
