@@ -67,7 +67,7 @@ export class HttpClient {
   private readonly timeout: number
   private readonly retries: number
   private readonly defaultHeaders: Record<string, string>
-  private token?: string
+  private token: string | undefined
 
   constructor(options: FreelanceAndMeOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, '')
@@ -150,12 +150,17 @@ export class HttpClient {
       }, timeout)
 
       try {
-        const response = await fetch(url, {
+        const fetchOptions: RequestInit = {
           method,
           headers,
-          body: body !== undefined ? JSON.stringify(body) : undefined,
           signal: controller.signal,
-        })
+        }
+
+        if (body !== undefined) {
+          fetchOptions.body = JSON.stringify(body)
+        }
+
+        const response = await fetch(url, fetchOptions)
 
         clearTimeout(timeoutId)
 

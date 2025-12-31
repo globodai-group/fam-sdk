@@ -2,7 +2,7 @@
  * Main SDK client class
  */
 
-import { FreelanceAndMeOptions, HttpClient } from './client.js'
+import { HttpClient } from './client.js'
 import {
   BankAccountsModule,
   CardRegistrationsModule,
@@ -18,6 +18,7 @@ import {
   UsersModule,
   WalletsModule,
 } from './modules/index.js'
+import type { FreelanceAndMeOptions } from './client.js'
 
 /**
  * Main Freelance-and-Me SDK client

@@ -29,7 +29,7 @@ export function isFamEvent(eventType: string): eventType is FamEventType {
  * Webhooks handler class
  */
 export class Webhooks {
-  private readonly signingSecret?: string
+  private readonly signingSecret: string | undefined
   private readonly timestampTolerance: number
 
   constructor(config: WebhookHandlerConfig = {}) {

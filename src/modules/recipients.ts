@@ -48,7 +48,7 @@ export class ScaRecipientsModule extends BaseModule {
    */
   async getSchema(request: RecipientSchemaRequest): Promise<RecipientSchema> {
     return this.client.get<RecipientSchema>(this.path('schema'), {
-      params: request as Record<string, string | number | boolean | undefined | null>,
+      params: request as unknown as Record<string, string | number | boolean | undefined | null>,
     })
   }
 }

@@ -2,7 +2,7 @@
  * Base error class for all SDK errors
  */
 export class FreelanceAndMeError extends Error {
-  public readonly name: string = 'FreelanceAndMeError'
+  public override readonly name: string = 'FreelanceAndMeError'
 
   constructor(message: string) {
     super(message)
@@ -16,8 +16,8 @@ export class FreelanceAndMeError extends Error {
 export class ApiError extends FreelanceAndMeError {
   public override readonly name: string = 'ApiError'
   public readonly statusCode: number
-  public readonly code?: string
-  public readonly details?: unknown
+  public readonly code: string | undefined
+  public readonly details: unknown
 
   constructor(message: string, statusCode: number, code?: string, details?: unknown) {
     super(message)
@@ -78,7 +78,7 @@ export class ValidationError extends ApiError {
  */
 export class RateLimitError extends ApiError {
   public override readonly name: string = 'RateLimitError'
-  public readonly retryAfter?: number
+  public readonly retryAfter: number | undefined
 
   constructor(message = 'Rate limit exceeded', retryAfter?: number) {
     super(message, 429, 'RATE_LIMIT_ERROR')
@@ -91,7 +91,7 @@ export class RateLimitError extends ApiError {
  */
 export class NetworkError extends FreelanceAndMeError {
   public override readonly name: string = 'NetworkError'
-  public readonly originalError?: Error
+  public readonly originalError: Error | undefined
 
   constructor(message: string, originalError?: Error) {
     super(message)
