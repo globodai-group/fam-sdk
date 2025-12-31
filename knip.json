@@ -1,8 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["src/index.ts", "src/webhooks/index.ts"],
   "project": ["src/**/*.ts"],
   "ignore": ["**/*.test.ts", "**/*.spec.ts"],
-  "ignoreDependencies": ["@vitest/coverage-v8"],
+  "ignoreDependencies": ["@commitlint/cli", "lint-staged"],
   "ignoreExportsUsedInFile": true
 }

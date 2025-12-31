@@ -1,11 +1,32 @@
 # @freelance-and-me/sdk
 
-[![CI](https://github.com/globodai-group/freelance-and-me-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/globodai-group/freelance-and-me-sdk/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/@freelance-and-me/sdk.svg)](https://www.npmjs.com/package/@freelance-and-me/sdk)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<p align="center">
+  <strong>Official TypeScript SDK for the Freelance-and-Me API (Mangopay wrapper)</strong>
+</p>
 
-Official TypeScript SDK for the Freelance-and-Me API (Mangopay wrapper).
+<p align="center">
+  <a href="https://github.com/globodai-group/freelance-and-me-sdk/actions/workflows/ci.yml"><img src="https://github.com/globodai-group/freelance-and-me-sdk/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://www.npmjs.com/package/@freelance-and-me/sdk"><img src="https://img.shields.io/npm/v/@freelance-and-me/sdk.svg?color=blue&label=version" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@freelance-and-me/sdk"><img src="https://img.shields.io/npm/dm/@freelance-and-me/sdk.svg?color=green" alt="npm downloads"></a>
+  <a href="https://bundlephobia.com/package/@freelance-and-me/sdk"><img src="https://img.shields.io/bundlephobia/minzip/@freelance-and-me/sdk?label=bundle%20size" alt="bundle size"></a>
+</p>
+
+<p align="center">
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white" alt="TypeScript"></a>
+  <a href="https://bun.sh"><img src="https://img.shields.io/badge/Bun-%3E%3D1.0-f9f1e1?logo=bun&logoColor=black" alt="Bun"></a>
+  <a href="#"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white" alt="Node.js"></a>
+  <a href="#"><img src="https://img.shields.io/badge/ESM%20%7C%20CJS-supported-8A2BE2" alt="ESM | CJS"></a>
+  <a href="#"><img src="https://img.shields.io/badge/dependencies-0-success" alt="Zero Dependencies"></a>
+</p>
+
+<p align="center">
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="https://conventionalcommits.org"><img src="https://img.shields.io/badge/Conventional%20Commits-1.0.0-fe5196?logo=conventionalcommits&logoColor=white" alt="Conventional Commits"></a>
+  <a href="https://prettier.io/"><img src="https://img.shields.io/badge/code_style-prettier-ff69b4.svg" alt="Code Style: Prettier"></a>
+  <a href="https://github.com/globodai-group/freelance-and-me-sdk/issues"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
+</p>
+
+---
 
 ## Features
 
@@ -19,7 +40,10 @@ Official TypeScript SDK for the Freelance-and-Me API (Mangopay wrapper).
 ## Installation
 
 ```bash
-# pnpm (recommended)
+# bun (recommended)
+bun add @freelance-and-me/sdk
+
+# pnpm
 pnpm add @freelance-and-me/sdk
 
 # npm
@@ -275,28 +299,28 @@ import type {
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Build
-pnpm run build
+bun run build
 
 # Run tests
-pnpm run test
+bun test
 
 # Run tests with coverage
-pnpm run test:coverage
+bun test --coverage
 
 # Lint
-pnpm run lint
+bun run lint
 
 # Format
-pnpm run format
+bun run format
 
 # Type check
-pnpm run typecheck
+bun run typecheck
 
 # Generate documentation
-pnpm run docs
+bun run docs
 ```
 
 ## License
