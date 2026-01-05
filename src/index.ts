@@ -1,21 +1,21 @@
 /**
- * @freelance-and-me/sdk
+ * fam-sdk
  *
- * Official TypeScript SDK for the Freelance-and-Me API (Mangopay wrapper)
+ * Official TypeScript SDK for the FAM API (Mangopay wrapper)
  */
 
 // Main client
-export { FreelanceAndMe } from './freelance-and-me.js'
+export { Fam } from './fam.js'
 
 // HTTP Client and options
-export type { FreelanceAndMeOptions, RequestOptions } from './client.js'
+export type { FamOptions, RequestOptions } from './client.js'
 
 // Error classes
 export {
   ApiError,
   AuthenticationError,
   AuthorizationError,
-  FreelanceAndMeError,
+  FamError,
   NetworkError,
   NotFoundError,
   RateLimitError,

@@ -3,7 +3,7 @@ import {
   ApiError,
   AuthenticationError,
   AuthorizationError,
-  FreelanceAndMeError,
+  FamError,
   NetworkError,
   NotFoundError,
   RateLimitError,
@@ -12,11 +12,11 @@ import {
   WebhookSignatureError,
 } from '../errors/index.js'
 
-describe('FreelanceAndMeError', () => {
+describe('FamError', () => {
   it('should create a base error with message', () => {
-    const error = new FreelanceAndMeError('test message')
+    const error = new FamError('test message')
     expect(error.message).toBe('test message')
-    expect(error.name).toBe('FreelanceAndMeError')
+    expect(error.name).toBe('FamError')
     expect(error).toBeInstanceOf(Error)
   })
 })

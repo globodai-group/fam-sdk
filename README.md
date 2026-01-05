@@ -1,14 +1,14 @@
-# @freelance-and-me/sdk
+# fam-sdk
 
 <p align="center">
-  <strong>Official TypeScript SDK for the Freelance-and-Me API (Mangopay wrapper)</strong>
+  <strong>Official TypeScript SDK for the FAM API (Mangopay wrapper)</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/globodai-group/freelance-and-me-sdk/actions/workflows/ci.yml"><img src="https://github.com/globodai-group/freelance-and-me-sdk/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://www.npmjs.com/package/@freelance-and-me/sdk"><img src="https://img.shields.io/npm/v/@freelance-and-me/sdk.svg?color=blue&label=version" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/@freelance-and-me/sdk"><img src="https://img.shields.io/npm/dm/@freelance-and-me/sdk.svg?color=green" alt="npm downloads"></a>
-  <a href="https://bundlephobia.com/package/@freelance-and-me/sdk"><img src="https://img.shields.io/bundlephobia/minzip/@freelance-and-me/sdk?label=bundle%20size" alt="bundle size"></a>
+  <a href="https://github.com/globodai-group/fam-sdk/actions/workflows/ci.yml"><img src="https://github.com/globodai-group/fam-sdk/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://www.npmjs.com/package/fam-sdk"><img src="https://img.shields.io/npm/v/fam-sdk.svg?color=blue&label=version" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/fam-sdk"><img src="https://img.shields.io/npm/dm/fam-sdk.svg?color=green" alt="npm downloads"></a>
+  <a href="https://bundlephobia.com/package/fam-sdk"><img src="https://img.shields.io/bundlephobia/minzip/fam-sdk?label=bundle%20size" alt="bundle size"></a>
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
   <a href="https://conventionalcommits.org"><img src="https://img.shields.io/badge/Conventional%20Commits-1.0.0-fe5196?logo=conventionalcommits&logoColor=white" alt="Conventional Commits"></a>
   <a href="https://prettier.io/"><img src="https://img.shields.io/badge/code_style-prettier-ff69b4.svg" alt="Code Style: Prettier"></a>
-  <a href="https://github.com/globodai-group/freelance-and-me-sdk/issues"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
+  <a href="https://github.com/globodai-group/fam-sdk/issues"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
 </p>
 
 ---
@@ -41,25 +41,25 @@
 
 ```bash
 # bun (recommended)
-bun add @freelance-and-me/sdk
+bun add fam-sdk
 
 # pnpm
-pnpm add @freelance-and-me/sdk
+pnpm add fam-sdk
 
 # npm
-npm install @freelance-and-me/sdk
+npm install fam-sdk
 
 # yarn
-yarn add @freelance-and-me/sdk
+yarn add fam-sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { FreelanceAndMe } from '@freelance-and-me/sdk'
+import { Fam } from 'fam-sdk'
 
-const client = new FreelanceAndMe({
-  baseUrl: 'https://api.freelance-and-me.com',
+const client = new Fam({
+  baseUrl: 'https://api.fam.com',
   token: 'your-auth-token',
 })
 
@@ -84,17 +84,17 @@ const wallet = await client.wallets.create({
 ## Configuration
 
 ```typescript
-import { FreelanceAndMe } from '@freelance-and-me/sdk'
-import type { FreelanceAndMeOptions } from '@freelance-and-me/sdk'
+import { Fam } from 'fam-sdk'
+import type { FamOptions } from 'fam-sdk'
 
-const options: FreelanceAndMeOptions = {
-  baseUrl: 'https://api.freelance-and-me.com',
+const options: FamOptions = {
+  baseUrl: 'https://api.fam.com',
   token: 'your-auth-token',
   timeout: 30000, // Request timeout in ms (default: 30000)
   retries: 3,     // Number of retries on network errors (default: 3)
 }
 
-const client = new FreelanceAndMe(options)
+const client = new Fam(options)
 ```
 
 ## API Reference
@@ -219,7 +219,7 @@ const subscription = await client.subscriptions.disable(subscriptionId)
 ## Webhooks
 
 ```typescript
-import { Webhooks } from '@freelance-and-me/sdk/webhooks'
+import { Webhooks } from 'fam-sdk/webhooks'
 
 const webhooks = new Webhooks({
   signingSecret: 'your-webhook-signing-secret',
@@ -256,7 +256,7 @@ import {
   NotFoundError,
   RateLimitError,
   NetworkError,
-} from '@freelance-and-me/sdk'
+} from 'fam-sdk'
 
 try {
   const user = await client.users.getUser('invalid-id')
@@ -292,7 +292,7 @@ import type {
   Card,
   KycDocument,
   RecurringSubscription,
-} from '@freelance-and-me/sdk'
+} from 'fam-sdk'
 ```
 
 ## Development

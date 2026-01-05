@@ -1,7 +1,7 @@
 {
-  "name": "@freelance-and-me/sdk",
+  "name": "fam-sdk",
   "version": "1.1.2",
-  "description": "Official TypeScript SDK for the Freelance-and-Me API",
+  "description": "Official TypeScript SDK for the FAM API",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -37,31 +37,31 @@
     "docs": "typedoc",
     "knip": "knip",
     "madge": "madge --circular --extensions ts src/",
-    "check": "pnpm run typecheck && pnpm run lint && pnpm run format:check",
-    "ci:check": "pnpm run check && pnpm run knip && pnpm run madge",
-    "ci:test": "pnpm run test:coverage",
-    "ci:build": "pnpm run build",
-    "prepublishOnly": "pnpm run ci:check && pnpm run ci:test && pnpm run ci:build",
+    "check": "bun run typecheck && bun run lint && bun run format:check",
+    "ci:check": "bun run check && bun run knip && bun run madge",
+    "ci:test": "bun run test:coverage",
+    "ci:build": "bun run build",
+    "prepublishOnly": "bun run ci:check && bun run ci:test && bun run ci:build",
     "prepare": "husky"
   },
   "keywords": [
-    "freelance-and-me",
+    "fam",
     "mangopay",
     "sdk",
     "api",
     "typescript",
     "payments"
   ],
-  "author": "Freelance-and-Me",
+  "author": "FAM",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/globodai-group/freelance-and-me-sdk.git"
+    "url": "git+https://github.com/globodai-group/fam-sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/globodai-group/freelance-and-me-sdk/issues"
+    "url": "https://github.com/globodai-group/fam-sdk/issues"
   },
-  "homepage": "https://github.com/globodai-group/freelance-and-me-sdk#readme",
+  "homepage": "https://github.com/globodai-group/fam-sdk#readme",
   "engines": {
     "node": ">=18.0.0"
   },
