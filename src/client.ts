@@ -13,7 +13,7 @@ import { buildUrl, retry } from './utils/index.js'
 /**
  * SDK configuration options
  */
-export interface FreelanceAndMeOptions {
+export interface FamOptions {
   /** Base URL of the API */
   baseUrl: string
   /** Authentication token */
@@ -69,7 +69,7 @@ export class HttpClient {
   private readonly defaultHeaders: Record<string, string>
   private token: string | undefined
 
-  constructor(options: FreelanceAndMeOptions) {
+  constructor(options: FamOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, '')
     this.token = options.token
     this.timeout = options.timeout ?? 30000
