@@ -18,15 +18,15 @@ import {
   UsersModule,
   WalletsModule,
 } from './modules/index.js'
-import type { FreelanceAndMeOptions } from './client.js'
+import type { FamOptions } from './client.js'
 
 /**
- * Main Freelance-and-Me SDK client
+ * Main FAM SDK client
  *
  * @example
  * ```typescript
- * const client = new FreelanceAndMe({
- *   baseUrl: 'https://api.freelance-and-me.com',
+ * const client = new Fam({
+ *   baseUrl: 'https://api.fam.com',
  *   token: 'your-auth-token',
  * })
  *
@@ -45,7 +45,7 @@ import type { FreelanceAndMeOptions } from './client.js'
  * })
  * ```
  */
-export class FreelanceAndMe {
+export class Fam {
   private readonly client: HttpClient
 
   // Core modules
@@ -63,7 +63,7 @@ export class FreelanceAndMe {
   // FAM custom module
   public readonly subscriptions: SubscriptionsModule
 
-  constructor(options: FreelanceAndMeOptions) {
+  constructor(options: FamOptions) {
     this.client = new HttpClient(options)
 
     // Initialize core modules

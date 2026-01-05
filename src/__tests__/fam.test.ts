@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { FreelanceAndMe } from '../freelance-and-me.js'
+import { Fam } from '../fam.js'
 import {
   BankAccountsModule,
   CardsModule,
@@ -20,12 +20,12 @@ import {
 const mockFetch = vi.fn()
 global.fetch = mockFetch
 
-describe('FreelanceAndMe', () => {
-  let client: FreelanceAndMe
+describe('Fam', () => {
+  let client: Fam
 
   beforeEach(() => {
     vi.clearAllMocks()
-    client = new FreelanceAndMe({
+    client = new Fam({
       baseUrl: 'https://api.example.com',
       token: 'test-token',
     })
@@ -33,19 +33,19 @@ describe('FreelanceAndMe', () => {
 
   describe('constructor', () => {
     it('should create client with required options', () => {
-      const c = new FreelanceAndMe({ baseUrl: 'https://api.example.com' })
-      expect(c).toBeInstanceOf(FreelanceAndMe)
+      const c = new Fam({ baseUrl: 'https://api.example.com' })
+      expect(c).toBeInstanceOf(Fam)
     })
 
     it('should create client with all options', () => {
-      const c = new FreelanceAndMe({
+      const c = new Fam({
         baseUrl: 'https://api.example.com',
         token: 'token',
         timeout: 60000,
         retries: 5,
         headers: { 'X-Custom': 'value' },
       })
-      expect(c).toBeInstanceOf(FreelanceAndMe)
+      expect(c).toBeInstanceOf(Fam)
     })
   })
 
@@ -117,7 +117,7 @@ describe('FreelanceAndMe', () => {
     it('should update the token', () => {
       client.setToken('new-token')
       // Token is internal, we just verify no error is thrown
-      expect(client).toBeInstanceOf(FreelanceAndMe)
+      expect(client).toBeInstanceOf(Fam)
     })
   })
 
@@ -125,7 +125,7 @@ describe('FreelanceAndMe', () => {
     it('should clear the token', () => {
       client.clearToken()
       // Token is internal, we just verify no error is thrown
-      expect(client).toBeInstanceOf(FreelanceAndMe)
+      expect(client).toBeInstanceOf(Fam)
     })
   })
 })

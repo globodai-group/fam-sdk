@@ -9,9 +9,9 @@
   "excludeInternal": true,
   "includeVersion": true,
   "readme": "README.md",
-  "name": "@freelance-and-me/sdk",
+  "name": "fam-sdk",
   "navigationLinks": {
-    "GitHub": "https://github.com/globodai-group/freelance-and-me-sdk"
+    "GitHub": "https://github.com/globodai-group/fam-sdk"
   },
   "githubPages": true,
   "hideGenerator": true

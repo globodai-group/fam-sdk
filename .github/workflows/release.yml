@@ -121,7 +121,7 @@ jobs:
             ## Installation
 
             ```bash
-            bun add @freelance-and-me/sdk@${{ steps.bump.outputs.version }}
+            bun add fam-sdk@${{ steps.bump.outputs.version }}
             ```
           draft: false
           prerelease: false

@@ -1,8 +1,8 @@
 /**
  * Base error class for all SDK errors
  */
-export class FreelanceAndMeError extends Error {
-  public override readonly name: string = 'FreelanceAndMeError'
+export class FamError extends Error {
+  public override readonly name: string = 'FamError'
 
   constructor(message: string) {
     super(message)
@@ -13,7 +13,7 @@ export class FreelanceAndMeError extends Error {
 /**
  * API error with status code and response details
  */
-export class ApiError extends FreelanceAndMeError {
+export class ApiError extends FamError {
   public override readonly name: string = 'ApiError'
   public readonly statusCode: number
   public readonly code: string | undefined
@@ -89,7 +89,7 @@ export class RateLimitError extends ApiError {
 /**
  * Network error for connection issues
  */
-export class NetworkError extends FreelanceAndMeError {
+export class NetworkError extends FamError {
   public override readonly name: string = 'NetworkError'
   public readonly originalError: Error | undefined
 
@@ -113,7 +113,7 @@ export class TimeoutError extends NetworkError {
 /**
  * Webhook signature verification error
  */
-export class WebhookSignatureError extends FreelanceAndMeError {
+export class WebhookSignatureError extends FamError {
   public override readonly name: string = 'WebhookSignatureError'
 
   constructor(message = 'Invalid webhook signature') {
