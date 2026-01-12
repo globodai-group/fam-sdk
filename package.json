@@ -1,5 +1,5 @@
 {
-  "name": "fam-sdk",
+  "name": "@globodai/fam-sdk",
   "version": "1.1.6",
   "description": "Official TypeScript SDK for the FAM API",
   "type": "module",
