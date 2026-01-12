@@ -37,11 +37,11 @@
     "docs": "typedoc",
     "knip": "knip",
     "madge": "madge --circular --extensions ts src/",
-    "check": "bun run typecheck && bun run lint && bun run format:check",
-    "ci:check": "bun run check && bun run knip && bun run madge",
-    "ci:test": "bun run test:coverage",
-    "ci:build": "bun run build",
-    "prepublishOnly": "bun run ci:check && bun run ci:test && bun run ci:build",
+    "check": "pnpm run typecheck && pnpm run lint && pnpm run format:check",
+    "ci:check": "pnpm run check && pnpm run knip && pnpm run madge",
+    "ci:test": "pnpm run test:coverage",
+    "ci:build": "pnpm run build",
+    "prepublishOnly": "pnpm run ci:check && pnpm run ci:test && pnpm run ci:build",
     "prepare": "husky"
   },
   "keywords": [
@@ -65,7 +65,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "packageManager": "bun@1.3.5",
+  "packageManager": "pnpm@9.15.4",
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
     "@commitlint/config-conventional": "^19.6.0",
