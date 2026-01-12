@@ -15,27 +15,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
 
-      - name: Setup Node.js (for npm publish)
-        uses: actions/setup-node@v6
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: bun run build
+        run: pnpm run build
 
       - name: Configure Git
         run: |
@@ -70,7 +69,7 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "Current version: $CURRENT_VERSION"
 
-          # Bump version using npm (bun uses npm for this)
+          # Bump version using npm
           NEW_VERSION=$(npm version $BUMP_TYPE --no-git-tag-version)
           NEW_VERSION=${NEW_VERSION#v}
           echo "New version: $NEW_VERSION"
@@ -121,7 +120,14 @@ jobs:
             ## Installation
 
             ```bash
-            bun add fam-sdk@${{ steps.bump.outputs.version }}
+            # npm
+            npm install fam-sdk@${{ steps.bump.outputs.version }}
+
+            # pnpm
+            pnpm add fam-sdk@${{ steps.bump.outputs.version }}
+
+            # yarn
+            yarn add fam-sdk@${{ steps.bump.outputs.version }}
             ```
           draft: false
           prerelease: false

@@ -13,7 +13,7 @@
 
 <p align="center">
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white" alt="TypeScript"></a>
-  <a href="https://bun.sh"><img src="https://img.shields.io/badge/Bun-%3E%3D1.0-f9f1e1?logo=bun&logoColor=black" alt="Bun"></a>
+  <a href="https://pnpm.io"><img src="https://img.shields.io/badge/pnpm-%3E%3D9.0-F69220?logo=pnpm&logoColor=white" alt="pnpm"></a>
   <a href="#"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white" alt="Node.js"></a>
   <a href="#"><img src="https://img.shields.io/badge/ESM%20%7C%20CJS-supported-8A2BE2" alt="ESM | CJS"></a>
   <a href="#"><img src="https://img.shields.io/badge/dependencies-0-success" alt="Zero Dependencies"></a>
@@ -40,14 +40,11 @@
 ## Installation
 
 ```bash
-# bun (recommended)
-bun add fam-sdk
+# npm
+npm install fam-sdk
 
 # pnpm
 pnpm add fam-sdk
-
-# npm
-npm install fam-sdk
 
 # yarn
 yarn add fam-sdk
@@ -299,29 +296,41 @@ import type {
 
 ```bash
 # Install dependencies
-bun install
+pnpm install
 
 # Build
-bun run build
+pnpm run build
 
 # Run tests
-bun test
+pnpm test
 
 # Run tests with coverage
-bun test --coverage
+pnpm run test:coverage
 
 # Lint
-bun run lint
+pnpm run lint
 
 # Format
-bun run format
+pnpm run format
 
 # Type check
-bun run typecheck
+pnpm run typecheck
 
 # Generate documentation
-bun run docs
+pnpm run docs
 ```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please make sure to update tests as appropriate and follow the existing code style.
 
 ## License
 
