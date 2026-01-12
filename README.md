@@ -10,10 +10,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/globodai-group/@globodai/fam-sdk/actions/workflows/ci.yml"><img src="https://github.com/globodai-group/@globodai/fam-sdk/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://www.npmjs.com/package/@globodai/fam-sdk"><img src="https://img.shields.io/npm/v/@globodai/fam-sdk.svg?color=0066FF&label=npm" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/@globodai/fam-sdk"><img src="https://img.shields.io/npm/dm/@globodai/fam-sdk.svg?color=green&label=downloads" alt="npm downloads"></a>
-  <a href="https://bundlephobia.com/package/@globodai/fam-sdk"><img src="https://img.shields.io/bundlephobia/minzip/@globodai/fam-sdk?label=size&color=orange" alt="bundle size"></a>
+  <a href="https://github.com/globodai-group/fam-sdk/actions/workflows/ci.yml"><img src="https://github.com/globodai-group/fam-sdk/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://www.npmjs.com/package/globodai-fam-sdk"><img src="https://img.shields.io/npm/v/globodai-fam-sdk.svg?color=0066FF&label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/globodai-fam-sdk"><img src="https://img.shields.io/npm/dm/globodai-fam-sdk.svg?color=green&label=downloads" alt="npm downloads"></a>
+  <a href="https://bundlephobia.com/package/globodai-fam-sdk"><img src="https://img.shields.io/bundlephobia/minzip/globodai-fam-sdk?label=size&color=orange" alt="bundle size"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
 </p>
 
@@ -45,7 +45,7 @@
 ## Installation
 
 ```bash
-npm install @globodai/fam-sdk
+npm install globodai-fam-sdk
 ```
 
 <details>
@@ -53,10 +53,10 @@ npm install @globodai/fam-sdk
 
 ```bash
 # yarn
-yarn add @globodai/fam-sdk
+yarn add globodai-fam-sdk
 
 # pnpm
-pnpm add @globodai/fam-sdk
+pnpm add globodai-fam-sdk
 ```
 
 </details>
@@ -64,7 +64,7 @@ pnpm add @globodai/fam-sdk
 ## Quick Start
 
 ```typescript
-import { Fam } from '@globodai/fam-sdk';
+import { Fam } from 'globodai-fam-sdk';
 
 // Initialize the client
 const fam = new Fam({
@@ -95,8 +95,8 @@ console.log(`Wallet created: ${wallet.Id}`);
 ## Configuration
 
 ```typescript
-import { Fam } from '@globodai/fam-sdk';
-import type { FamOptions } from '@globodai/fam-sdk';
+import { Fam } from 'globodai-fam-sdk';
+import type { FamOptions } from 'globodai-fam-sdk';
 
 const options: FamOptions = {
   baseUrl: 'https://api.fam.com',
@@ -482,7 +482,7 @@ await fam.subscriptions.cancel(subscriptionId);
 Verify and process webhook events securely:
 
 ```typescript
-import { Webhooks } from '@globodai/fam-sdk/webhooks';
+import { Webhooks } from 'globodai-fam-sdk/webhooks';
 
 const webhooks = new Webhooks({
   signingSecret: process.env.WEBHOOK_SECRET,
@@ -530,7 +530,7 @@ import {
   NotFoundError,
   RateLimitError,
   NetworkError,
-} from '@globodai/fam-sdk';
+} from 'globodai-fam-sdk';
 
 try {
   const user = await fam.users.getUser('invalid-id');
@@ -586,7 +586,7 @@ import type {
 
   // Subscriptions
   RecurringSubscription,
-} from '@globodai/fam-sdk';
+} from 'globodai-fam-sdk';
 ```
 
 ## Development
