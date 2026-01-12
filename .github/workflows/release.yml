@@ -122,13 +122,13 @@ jobs:
 
             ```bash
             # npm
-            npm install fam-sdk@${{ steps.bump.outputs.version }}
+            npm install globodai-fam-sdk@${{ steps.bump.outputs.version }}
 
             # pnpm
-            pnpm add fam-sdk@${{ steps.bump.outputs.version }}
+            pnpm add globodai-fam-sdk@${{ steps.bump.outputs.version }}
 
             # yarn
-            yarn add fam-sdk@${{ steps.bump.outputs.version }}
+            yarn add globodai-fam-sdk@${{ steps.bump.outputs.version }}
             ```
           draft: false
           prerelease: false
