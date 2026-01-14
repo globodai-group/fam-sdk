@@ -47,6 +47,7 @@ export {
   KycModule,
   PayinsModule,
   PayoutsModule,
+  PortalModule,
   PreauthorizationsModule,
   ScaRecipientsModule,
   SubscriptionsModule,
