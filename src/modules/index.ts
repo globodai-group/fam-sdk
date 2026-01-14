@@ -8,6 +8,7 @@ export { CardRegistrationsModule, CardsModule, PreauthorizationsModule } from '.
 export { KycModule } from './kyc.js'
 export { PayinsModule } from './payins.js'
 export { PayoutsModule } from './payouts.js'
+export { PortalModule } from './portal.js'
 export { ScaRecipientsModule } from './recipients.js'
 export { SubscriptionsModule } from './subscriptions.js'
 export { TransfersModule } from './transfers.js'

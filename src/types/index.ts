@@ -156,3 +156,17 @@ export type {
   WebhookEventType,
   WebhookHandlerConfig,
 } from './webhooks.js'
+
+// Portal types
+export type {
+  CheckoutConfig,
+  CreatePortalSessionRequest,
+  CreatePortalSessionResponse,
+  GetPortalUserResponse,
+  PortalLogoutResponse,
+  PortalUser,
+  PortalWebsiteConfig,
+  RefreshPortalSessionResponse,
+  ValidatePortalSessionRequest,
+  ValidatePortalSessionResponse,
+} from './portal.js'
