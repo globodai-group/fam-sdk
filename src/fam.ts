@@ -10,6 +10,7 @@ import {
   KycModule,
   PayinsModule,
   PayoutsModule,
+  PortalModule,
   PreauthorizationsModule,
   ScaRecipientsModule,
   SubscriptionsModule,
@@ -60,8 +61,9 @@ export class Fam {
   public readonly cardRegistrations: CardRegistrationsModule
   public readonly preauthorizations: PreauthorizationsModule
 
-  // FAM custom module
+  // FAM custom modules
   public readonly subscriptions: SubscriptionsModule
+  public readonly portal: PortalModule
 
   constructor(options: FamOptions) {
     this.client = new HttpClient(options)
@@ -78,8 +80,9 @@ export class Fam {
     this.cardRegistrations = new CardRegistrationsModule(this.client)
     this.preauthorizations = new PreauthorizationsModule(this.client)
 
-    // Initialize FAM custom module
+    // Initialize FAM custom modules
     this.subscriptions = new SubscriptionsModule(this.client)
+    this.portal = new PortalModule(this.client)
   }
 
   /**
