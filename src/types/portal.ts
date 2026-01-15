@@ -16,20 +16,32 @@ export interface CheckoutConfig {
   productLabel: string
   /** Optional product description */
   productDescription?: string | null
-  /** Amount in cents */
+  /** Amount in cents (monthly price if frequency selector shown) */
   amount: number
   /** Currency code (default: EUR) */
   currency?: string
   /** Whether this is a recurring payment */
   isRecurring: boolean
-  /** Payment frequency for recurring payments */
+  /** Payment frequency - if set, locks frequency (no selector shown in portal) */
   frequency?: 'MONTHLY' | 'YEARLY'
+  /** Amount in cents for yearly plan (only used when frequency selector is shown) */
+  yearlyAmount?: number | null
+  /** Savings label for yearly plan (e.g., "2 mois offerts", "-17%") */
+  yearlySavingsLabel?: string | null
   /** Whether a discount is applied */
   hasDiscount?: boolean
   /** Display label for the discount */
   discountLabel?: string | null
   /** Original amount before discount (in cents) */
   originalAmount?: number | null
+  /** Required: Platform/merchant wallet ID to receive payment */
+  creditedWalletId: string
+  /** Optional: Platform/merchant user ID (for fees) */
+  creditedUserId?: string
+  /** Required: User ID in client app (e.g., Exaku user ID) */
+  externalUserId: string
+  /** Optional: Subscription ID in client app */
+  externalSubscriptionId?: string
   /** Client app specific metadata */
   metadata?: Record<string, unknown>
 }
