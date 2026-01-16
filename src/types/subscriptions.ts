@@ -45,27 +45,48 @@ export interface RecurringSubscription {
 }
 
 /**
- * Subscription payment entity
+ * Subscription payment entity (matches FAM API response)
  */
 export interface SubscriptionPayment {
   id: string
-  subscriptionId: string
   payinId?: string
-  amount: number
-  currency: Currency
+  type: 'CIT' | 'MIT'
   status: SubscriptionPaymentStatus
-  scheduledDate: string
+  amount: number
+  fees?: number
+  currency: Currency
+  resultCode?: string
+  resultMessage?: string
   processedAt?: string
-  errorMessage?: string
   createdAt: string
-  updatedAt: string
 }
 
 /**
- * Subscription with payments
+ * Subscription with payments (matches FAM API response for GET /subscriptions/:id)
  */
-export interface SubscriptionWithPayments extends RecurringSubscription {
+export interface SubscriptionWithPayments {
+  id: string
+  registrationId: string
+  externalUserId: string
+  externalSubscriptionId?: string
+  subscriptionName?: string
+  subscriptionType?: string
+  billingPeriod?: string
+  status: string
+  amount: number
+  currency: Currency
+  frequency: SubscriptionFrequency
+  payinsLinked?: number
+  freeCycles?: number
+  isInFreeCycle?: boolean
+  processingEnabled: boolean
+  nextProcessingAt?: string
+  lastSyncedAt?: string
+  metadata?: Record<string, unknown>
+  mangopayData?: Record<string, unknown>
   payments: SubscriptionPayment[]
+  createdAt: string
+  updatedAt: string
 }
 
 /**
