@@ -107,6 +107,37 @@ export interface SubscriptionListFilters extends PaginationParams {
 }
 
 /**
+ * Filters for listing subscriptions by MangoPay user ID
+ */
+export interface MangopayUserSubscriptionFilters {
+  subscriptionType?: string
+  activeOnly?: boolean
+}
+
+/**
+ * Subscription returned by the byMangopayUser endpoint
+ */
+export interface MangopayUserSubscription {
+  id: string
+  registrationId: string
+  mangopayUserId: string
+  externalUserId: string
+  externalSubscriptionId: string
+  subscriptionName: string | null
+  subscriptionType: string | null
+  billingPeriod: string | null
+  status: string
+  amount: number
+  currency: Currency
+  frequency: SubscriptionFrequency
+  processingEnabled: boolean
+  nextProcessingAt: string | null
+  metadata: Record<string, unknown> | null
+  createdAt: string
+  updatedAt: string
+}
+
+/**
  * Sync subscription response
  */
 export interface SyncSubscriptionResponse {

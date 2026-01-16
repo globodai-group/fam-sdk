@@ -6,6 +6,8 @@ import { BaseModule } from './base.js'
 import type { HttpClient } from '../client.js'
 import type { PaginatedResponse } from '../types/common.js'
 import type {
+  MangopayUserSubscription,
+  MangopayUserSubscriptionFilters,
   RecurringSubscription,
   RegisterSubscriptionRequest,
   SubscriptionListFilters,
@@ -95,5 +97,30 @@ export class SubscriptionsModule extends BaseModule {
    */
   async disableWebhooks(subscriptionId: string): Promise<RecurringSubscription> {
     return this.update(subscriptionId, { webhookNotificationEnabled: false })
+  }
+
+  /**
+   * List subscriptions for a MangoPay user
+   * Useful for retrieving all subscriptions associated with a specific MangoPay user ID
+   *
+   * @param mangopayUserId - The MangoPay user ID
+   * @param filters - Optional filters (subscriptionType, activeOnly)
+   */
+  async listByMangopayUser(
+    mangopayUserId: string,
+    filters?: MangopayUserSubscriptionFilters
+  ): Promise<{ success: boolean; subscriptions: MangopayUserSubscription[] }> {
+    const params: Record<string, string | boolean | undefined> = {}
+    if (filters?.subscriptionType !== undefined && filters.subscriptionType !== '') {
+      params['subscriptionType'] = filters.subscriptionType
+    }
+    if (filters?.activeOnly !== undefined) {
+      params['activeOnly'] = String(filters.activeOnly)
+    }
+
+    return this.client.get<{ success: boolean; subscriptions: MangopayUserSubscription[] }>(
+      this.path(`user/${mangopayUserId}`),
+      { params }
+    )
   }
 }
