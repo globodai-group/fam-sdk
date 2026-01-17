@@ -44,16 +44,18 @@ export class UsersModule extends BaseModule {
 
   /**
    * Create a natural user
+   * Uses POST /api/v1/mangopay/users with PersonType: 'NATURAL'
    */
   async createNatural(data: CreateNaturalUserRequest): Promise<NaturalUser> {
-    return this.post<NaturalUser>('natural', data)
+    return this.client.post<NaturalUser>(this.basePath, { ...data, PersonType: 'NATURAL' })
   }
 
   /**
    * Create a legal user
+   * Uses POST /api/v1/mangopay/users with PersonType: 'LEGAL'
    */
   async createLegal(data: CreateLegalUserRequest): Promise<LegalUser> {
-    return this.post<LegalUser>('legal', data)
+    return this.client.post<LegalUser>(this.basePath, { ...data, PersonType: 'LEGAL' })
   }
 
   /**
