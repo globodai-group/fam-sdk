@@ -92,6 +92,12 @@ export interface CreatePortalSessionRequest {
   expiresInMinutes?: number
   /** Optional checkout configuration for direct checkout flow */
   checkoutConfig?: CheckoutConfig
+  /**
+   * Filter subscriptions by external user ID
+   * When set, only subscriptions matching this externalUserId will be shown in the portal
+   * Useful when multiple users share the same MangoPay account
+   */
+  filterByExternalUserId?: string
 }
 
 /**
@@ -138,6 +144,8 @@ export interface ValidatePortalSessionResponse {
     user: PortalUser
     /** Website configuration for theming */
     website: PortalWebsiteConfig
+    /** Filter to apply when listing subscriptions (if set during session creation) */
+    filterByExternalUserId: string | null
   }
 }
 
