@@ -48,6 +48,8 @@ export interface CheckoutConfig {
   tag?: string
   /** Number of days for free trial (first charge delayed by this many days) */
   trialDays?: number
+  /** Custom statement descriptor shown on bank statement (max 10 chars, will be truncated) */
+  statementDescriptor?: string
 }
 
 /**
