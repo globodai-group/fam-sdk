@@ -44,6 +44,10 @@ export interface CheckoutConfig {
   externalSubscriptionId?: string
   /** Client app specific metadata */
   metadata?: Record<string, unknown>
+  /** Custom tag for MangoPay (max 255 chars, will be truncated if longer) */
+  tag?: string
+  /** Number of days for free trial (first charge delayed by this many days) */
+  trialDays?: number
 }
 
 /**
