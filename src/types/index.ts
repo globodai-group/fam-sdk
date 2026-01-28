@@ -133,6 +133,8 @@ export type {
 
 // Subscription types
 export type {
+  MangopayUserSubscription,
+  MangopayUserSubscriptionFilters,
   RecurringSubscription,
   RegisterSubscriptionRequest,
   SubscriptionFrequency,
@@ -144,6 +146,23 @@ export type {
   SyncSubscriptionResponse,
   UpdateSubscriptionRequest,
 } from './subscriptions.js'
+
+// Bundle types
+export type {
+  Bundle,
+  BundleBillingPeriod,
+  BundleItemDefinition,
+  BundleListFilters,
+  BundlePriceInfo,
+  BundleValidationError,
+  BundleValidationResult,
+  BundleWithSubscriptions,
+  CreateBundleFromSubscriptionsRequest,
+  CreateBundleResponse,
+  CreateBundleWithNewSubscriptionsRequest,
+  DissolveBundleResponse,
+  UpdateBundleRequest,
+} from './bundles.js'
 
 // Webhook types
 export type {

@@ -6,8 +6,15 @@ import type { Currency, PaginationParams } from './common.js'
 
 /**
  * Subscription status
+ * AUTHENTICATION_NEEDED: User must complete 3D Secure (SCA) authentication
  */
-export type SubscriptionStatus = 'ACTIVE' | 'PAUSED' | 'CANCELLED' | 'ENDED' | 'FAILED'
+export type SubscriptionStatus =
+  | 'ACTIVE'
+  | 'PAUSED'
+  | 'CANCELLED'
+  | 'ENDED'
+  | 'FAILED'
+  | 'AUTHENTICATION_NEEDED'
 
 /**
  * Subscription frequency
@@ -42,6 +49,9 @@ export interface RecurringSubscription {
   metadata?: Record<string, unknown>
   createdAt: string
   updatedAt: string
+
+  /** Bundle ID if this subscription belongs to a bundle */
+  bundleId?: string | null
 }
 
 /**
@@ -87,6 +97,9 @@ export interface SubscriptionWithPayments {
   payments: SubscriptionPayment[]
   createdAt: string
   updatedAt: string
+
+  /** Bundle ID if this subscription belongs to a bundle */
+  bundleId?: string | null
 }
 
 /**
@@ -156,6 +169,9 @@ export interface MangopayUserSubscription {
   metadata: Record<string, unknown> | null
   createdAt: string
   updatedAt: string
+
+  /** Bundle ID if this subscription belongs to a bundle */
+  bundleId?: string | null
 }
 
 /**

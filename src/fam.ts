@@ -5,6 +5,7 @@
 import { HttpClient } from './client.js'
 import {
   BankAccountsModule,
+  BundlesModule,
   CardRegistrationsModule,
   CardsModule,
   KycModule,
@@ -63,6 +64,7 @@ export class Fam {
 
   // FAM custom modules
   public readonly subscriptions: SubscriptionsModule
+  public readonly bundles: BundlesModule
   public readonly portal: PortalModule
 
   constructor(options: FamOptions) {
@@ -82,6 +84,7 @@ export class Fam {
 
     // Initialize FAM custom modules
     this.subscriptions = new SubscriptionsModule(this.client)
+    this.bundles = new BundlesModule(this.client)
     this.portal = new PortalModule(this.client)
   }
 

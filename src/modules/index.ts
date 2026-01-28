@@ -4,6 +4,7 @@
 
 export { BaseModule } from './base.js'
 export { BankAccountsModule } from './bank-accounts.js'
+export { BundlesModule } from './bundles.js'
 export { CardRegistrationsModule, CardsModule, PreauthorizationsModule } from './cards.js'
 export { KycModule } from './kyc.js'
 export { PayinsModule } from './payins.js'
