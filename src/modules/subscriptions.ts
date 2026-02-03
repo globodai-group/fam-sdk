@@ -6,6 +6,8 @@ import { BaseModule } from './base.js'
 import type { HttpClient } from '../client.js'
 import type { PaginatedResponse } from '../types/common.js'
 import type {
+  LinkProductsRequest,
+  LinkProductsResponse,
   MangopayUserSubscription,
   MangopayUserSubscriptionFilters,
   RecurringSubscription,
@@ -65,10 +67,22 @@ export class SubscriptionsModule extends BaseModule {
   }
 
   /**
-   * Cancel a subscription
+   * Cancel a subscription (disable processing only)
+   * This keeps the MangoPay registration active but disables local processing.
+   * Use this when modifying a bundle (e.g., removing one product but keeping others).
    */
   async cancel(subscriptionId: string): Promise<RecurringSubscription> {
     return this.post<RecurringSubscription>(`${subscriptionId}/cancel`)
+  }
+
+  /**
+   * End a subscription completely in MangoPay
+   * This terminates the RecurringPayinRegistration in MangoPay (Status = ENDED)
+   * and disables local processing. Use this when cancelling the entire bundle
+   * (no remaining products).
+   */
+  async end(subscriptionId: string): Promise<RecurringSubscription> {
+    return this.post<RecurringSubscription>(`${subscriptionId}/end`)
   }
 
   /**
@@ -122,5 +136,47 @@ export class SubscriptionsModule extends BaseModule {
       this.path(`user/${mangopayUserId}`),
       { params }
     )
+  }
+
+  /**
+   * Update a subscription by MangoPay registration ID
+   * Useful when you only have the registration ID (not the internal subscription ID)
+   * This is typically used after bundle splits to update the subscription name.
+   *
+   * @param registrationId - The MangoPay RecurringPayinRegistration ID
+   * @param data - The update data (subscriptionName, metadata, bundleId, etc.)
+   */
+  async updateByRegistrationId(
+    registrationId: string,
+    data: UpdateSubscriptionRequest
+  ): Promise<RecurringSubscription> {
+    return this.put<RecurringSubscription>(`by-registration/${registrationId}`, data)
+  }
+
+  /**
+   * Link products to a subscription
+   * Creates subscription_products entries linking the subscription to products.
+   * Supports direct product IDs (preferred) or lookup by type.
+   *
+   * @param subscriptionId - The FAM subscription ID
+   * @param options - Link options (productIds preferred, or productTypes for lookup)
+   *
+   * @example
+   * // Preferred: Use direct FAM product IDs
+   * await fam.subscriptions.linkProducts('sub-123', {
+   *   productIds: ['prod-abc', 'prod-def']
+   * })
+   *
+   * @example
+   * // Fallback: Lookup by product type
+   * await fam.subscriptions.linkProducts('sub-123', {
+   *   productTypes: ['mbc', 'ibo', 'global']
+   * })
+   */
+  async linkProducts(
+    subscriptionId: string,
+    options: LinkProductsRequest
+  ): Promise<LinkProductsResponse> {
+    return this.post<LinkProductsResponse>(`${subscriptionId}/link-products`, options)
   }
 }
