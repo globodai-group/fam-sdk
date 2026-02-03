@@ -15,6 +15,8 @@ import {
   UboModule,
   ScaRecipientsModule,
   SubscriptionsModule,
+  BundlesModule,
+  ProductsModule,
 } from '../modules/index.js'
 
 // Mock fetch globally
@@ -625,5 +627,306 @@ describe('SubscriptionsModule', () => {
     mockSuccessResponse({ synced: true })
     const result = await module.sync('sub-123')
     expect(result.synced).toBe(true)
+  })
+})
+
+describe('BundlesModule', () => {
+  let client: HttpClient
+  let module: BundlesModule
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    client = createMockClient()
+    module = new BundlesModule(client)
+  })
+
+  it('should list bundles', async () => {
+    mockSuccessResponse({ data: [{ id: 'bundle-1' }], pagination: {} })
+    const result = await module.list()
+    expect(result.data).toHaveLength(1)
+  })
+
+  it('should list bundles with filters', async () => {
+    mockSuccessResponse({ data: [{ id: 'bundle-1' }], pagination: {} })
+    const result = await module.list({ mangopayUserId: 'user-123', isActive: true })
+    expect(result.data).toHaveLength(1)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('mangopayUserId=user-123'),
+      expect.any(Object)
+    )
+  })
+
+  it('should get bundle by id', async () => {
+    mockSuccessResponse({ id: 'bundle-123', subscriptions: [] })
+    const result = await module.getBundle('bundle-123')
+    expect(result.id).toBe('bundle-123')
+  })
+
+  it('should get bundle by code', async () => {
+    mockSuccessResponse({ id: 'bundle-123', code: 'mbc_ibo_global' })
+    const result = await module.getByCode('mbc_ibo_global')
+    expect(result.code).toBe('mbc_ibo_global')
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/code/mbc_ibo_global'),
+      expect.any(Object)
+    )
+  })
+
+  it('should validate bundle', async () => {
+    mockSuccessResponse({ isValid: true, subscriptionsToDisable: [] })
+    const result = await module.validate(['sub-1', 'sub-2'], 'user-123')
+    expect(result.isValid).toBe(true)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/validate'),
+      expect.objectContaining({ method: 'POST' })
+    )
+  })
+
+  it('should get bundle price', async () => {
+    mockSuccessResponse({ totalAmount: 5000, currency: 'EUR' })
+    const result = await module.getPrice(['sub-1', 'sub-2'], { billingPeriod: 'monthly' })
+    expect(result.totalAmount).toBe(5000)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/price'),
+      expect.objectContaining({ method: 'POST' })
+    )
+  })
+
+  it('should create bundle from subscriptions', async () => {
+    mockSuccessResponse({ bundle: { id: 'bundle-123' } })
+    const result = await module.createFromSubscriptions({
+      mangopayUserId: 'user-123',
+      subscriptionIds: ['sub-1', 'sub-2'],
+      amount: 5000,
+      currency: 'EUR',
+    })
+    expect(result.bundle.id).toBe('bundle-123')
+  })
+
+  it('should subscribe to bundle', async () => {
+    mockSuccessResponse({ bundle: { id: 'bundle-123' } })
+    const result = await module.subscribe({
+      mangopayUserId: 'user-123',
+      walletId: 'wallet-123',
+      cardId: 'card-123',
+      products: [{ productId: 'prod-1' }],
+      amount: 5000,
+      currency: 'EUR',
+      billingPeriod: 'monthly',
+    })
+    expect(result.bundle.id).toBe('bundle-123')
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/subscribe'),
+      expect.objectContaining({ method: 'POST' })
+    )
+  })
+
+  it('should update bundle', async () => {
+    mockSuccessResponse({ id: 'bundle-123', amount: 6000 })
+    const result = await module.update('bundle-123', { amount: 6000 })
+    expect(result.amount).toBe(6000)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/bundle-123'),
+      expect.objectContaining({ method: 'PUT' })
+    )
+  })
+
+  it('should add subscriptions to bundle', async () => {
+    mockSuccessResponse({ id: 'bundle-123', subscriptions: [{ id: 'sub-1' }, { id: 'sub-2' }] })
+    const result = await module.addSubscriptions('bundle-123', ['sub-2'], 6000)
+    expect(result.subscriptions).toHaveLength(2)
+  })
+
+  it('should remove subscriptions from bundle', async () => {
+    mockSuccessResponse({ id: 'bundle-123', subscriptions: [{ id: 'sub-1' }] })
+    const result = await module.removeSubscriptions('bundle-123', ['sub-2'], 3000)
+    expect(result.subscriptions).toHaveLength(1)
+  })
+
+  it('should dissolve bundle', async () => {
+    mockSuccessResponse({ success: true, reenabledSubscriptions: ['sub-1', 'sub-2'] })
+    const result = await module.dissolve('bundle-123')
+    expect(result.success).toBe(true)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/bundle-123'),
+      expect.objectContaining({ method: 'DELETE' })
+    )
+  })
+
+  it('should list bundles by mangopay user', async () => {
+    mockSuccessResponse({ data: [{ id: 'bundle-1' }], pagination: {} })
+    const result = await module.listByMangopayUser('user-123', { isActive: true })
+    expect(result.data).toHaveLength(1)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('mangopayUserId=user-123'),
+      expect.any(Object)
+    )
+  })
+
+  it('should activate bundle', async () => {
+    mockSuccessResponse({ id: 'bundle-123', isActive: true })
+    const result = await module.activate('bundle-123')
+    expect(result.isActive).toBe(true)
+  })
+
+  it('should deactivate bundle', async () => {
+    mockSuccessResponse({ id: 'bundle-123', isActive: false })
+    const result = await module.deactivate('bundle-123')
+    expect(result.isActive).toBe(false)
+  })
+})
+
+describe('ProductsModule', () => {
+  let client: HttpClient
+  let module: ProductsModule
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    client = createMockClient()
+    module = new ProductsModule(client)
+  })
+
+  it('should list products', async () => {
+    mockSuccessResponse({ data: [{ id: 'prod-1' }], pagination: {} })
+    const result = await module.list()
+    expect(result.data).toHaveLength(1)
+  })
+
+  it('should list products with filters', async () => {
+    mockSuccessResponse({ data: [{ id: 'prod-1' }], pagination: {} })
+    const result = await module.list({ isActive: true, page: 1, perPage: 10 })
+    expect(result.data).toHaveLength(1)
+  })
+
+  it('should get product by id', async () => {
+    mockSuccessResponse({ id: 'prod-123', name: 'Test Product' })
+    const result = await module.getById('prod-123')
+    expect(result.id).toBe('prod-123')
+  })
+
+  it('should get product by external id', async () => {
+    mockSuccessResponse({ id: 'prod-123', externalId: 'ext-123' })
+    const result = await module.getByExternalId('ext-123')
+    expect(result.externalId).toBe('ext-123')
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/external/ext-123'),
+      expect.any(Object)
+    )
+  })
+
+  it('should get product by name', async () => {
+    mockSuccessResponse({ id: 'prod-123', name: 'Premium Plan' })
+    const result = await module.getByName('Premium Plan')
+    expect(result.name).toBe('Premium Plan')
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/name/Premium%20Plan'),
+      expect.any(Object)
+    )
+  })
+
+  it('should create product', async () => {
+    mockSuccessResponse({ id: 'prod-123', name: 'New Product' })
+    const result = await module.create({
+      name: 'New Product',
+      monthlyPrice: 1000,
+      yearlyPrice: 10000,
+      currency: 'EUR',
+    })
+    expect(result.id).toBe('prod-123')
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ method: 'POST' })
+    )
+  })
+
+  it('should update product', async () => {
+    mockSuccessResponse({ id: 'prod-123', name: 'Updated Product' })
+    const result = await module.update('prod-123', { name: 'Updated Product' })
+    expect(result.name).toBe('Updated Product')
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/prod-123'),
+      expect.objectContaining({ method: 'PUT' })
+    )
+  })
+
+  it('should upsert product by external id', async () => {
+    mockSuccessResponse({ product: { id: 'prod-123' }, created: true })
+    const result = await module.upsertByExternalId('ext-123', {
+      name: 'Upserted Product',
+      monthlyPrice: 1000,
+      yearlyPrice: 10000,
+    })
+    expect(result.created).toBe(true)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/external/ext-123'),
+      expect.objectContaining({ method: 'PUT' })
+    )
+  })
+
+  it('should upsert product by name', async () => {
+    mockSuccessResponse({ product: { id: 'prod-123' }, created: false })
+    const result = await module.upsertByName('Premium Plan', {
+      monthlyPrice: 1500,
+      yearlyPrice: 15000,
+    })
+    expect(result.created).toBe(false)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/name/Premium%20Plan'),
+      expect.objectContaining({ method: 'PUT' })
+    )
+  })
+
+  it('should remove product', async () => {
+    mockSuccessResponse({ success: true })
+    const result = await module.remove('prod-123')
+    expect(result.success).toBe(true)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/prod-123'),
+      expect.objectContaining({ method: 'DELETE' })
+    )
+  })
+
+  it('should activate product', async () => {
+    mockSuccessResponse({ id: 'prod-123', isActive: true })
+    const result = await module.activate('prod-123')
+    expect(result.isActive).toBe(true)
+  })
+
+  it('should deactivate product', async () => {
+    mockSuccessResponse({ id: 'prod-123', isActive: false })
+    const result = await module.deactivate('prod-123')
+    expect(result.isActive).toBe(false)
+  })
+
+  it('should find product by external id', async () => {
+    mockSuccessResponse({ id: 'prod-123', externalId: 'ext-123' })
+    const result = await module.findByExternalId('ext-123')
+    expect(result?.id).toBe('prod-123')
+  })
+
+  it('should return null when product not found by external id', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      json: async () => ({ error: 'Not found' }),
+    })
+    const result = await module.findByExternalId('non-existent')
+    expect(result).toBeNull()
+  })
+
+  it('should find product by name', async () => {
+    mockSuccessResponse({ id: 'prod-123', name: 'Premium Plan' })
+    const result = await module.findByName('Premium Plan')
+    expect(result?.id).toBe('prod-123')
+  })
+
+  it('should return null when product not found by name', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      json: async () => ({ error: 'Not found' }),
+    })
+    const result = await module.findByName('Non Existent')
+    expect(result).toBeNull()
   })
 })
