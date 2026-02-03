@@ -164,6 +164,17 @@ export type {
   UpdateBundleRequest,
 } from './bundles.js'
 
+// Product types
+export type {
+  CreateProductRequest,
+  DeleteProductResponse,
+  Product,
+  ProductListFilters,
+  UpdateProductRequest,
+  UpsertProductRequest,
+  UpsertProductResponse,
+} from './products.js'
+
 // Webhook types
 export type {
   BaseWebhookEvent,

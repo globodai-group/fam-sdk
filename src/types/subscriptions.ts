@@ -117,6 +117,13 @@ export interface RegisterSubscriptionRequest {
   endDate?: string
   metadata?: Record<string, unknown>
   webhookNotificationEnabled?: boolean
+  /**
+   * Override the next processing date for the first MIT payment.
+   * Use this to defer the first recurring payment (e.g., when user has an existing yearly subscription
+   * and wants to add monthly - defer monthly until yearly expires).
+   * Format: ISO 8601 date string
+   */
+  nextProcessingAt?: string
 }
 
 /**
@@ -129,6 +136,14 @@ export interface UpdateSubscriptionRequest {
   processingEnabled?: boolean
   webhookNotificationEnabled?: boolean
   metadata?: Record<string, unknown>
+  /** Subscription name (displayed in portal) */
+  subscriptionName?: string
+  /** Subscription type (e.g., 'mbc', 'elearning') */
+  subscriptionType?: string
+  /** Billing period ('monthly' | 'yearly') */
+  billingPeriod?: string
+  /** Bundle ID - set to null to detach from bundle */
+  bundleId?: string | null
 }
 
 /**
@@ -181,4 +196,43 @@ export interface SyncSubscriptionResponse {
   subscription: RecurringSubscription
   synced: boolean
   mangopayStatus?: string
+}
+
+/**
+ * Linked product in a subscription
+ */
+export interface LinkedProduct {
+  productId: string
+  productName: string
+  externalId: string | null
+  expectedAmount: number
+  isNew: boolean
+}
+
+/**
+ * Link products request
+ * Supports direct product IDs (preferred) or lookup by type
+ */
+export interface LinkProductsRequest {
+  /** FAM product IDs - preferred method */
+  productIds?: string[]
+  /** Single FAM product ID */
+  productId?: string
+  /** Fallback: single product type for lookup */
+  productType?: string
+  /** Fallback: multiple product types for lookup */
+  productTypes?: string[]
+  /** If true, removes existing links before adding new ones */
+  clearExisting?: boolean
+}
+
+/**
+ * Link products response
+ */
+export interface LinkProductsResponse {
+  success: boolean
+  subscriptionId: string
+  linkedProducts: LinkedProduct[]
+  notFoundIds?: string[]
+  notFoundTypes?: string[]
 }

@@ -49,6 +49,7 @@ export {
   PayoutsModule,
   PortalModule,
   PreauthorizationsModule,
+  ProductsModule,
   ScaRecipientsModule,
   SubscriptionsModule,
   TransfersModule,

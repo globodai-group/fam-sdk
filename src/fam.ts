@@ -13,6 +13,7 @@ import {
   PayoutsModule,
   PortalModule,
   PreauthorizationsModule,
+  ProductsModule,
   ScaRecipientsModule,
   SubscriptionsModule,
   TransfersModule,
@@ -65,6 +66,7 @@ export class Fam {
   // FAM custom modules
   public readonly subscriptions: SubscriptionsModule
   public readonly bundles: BundlesModule
+  public readonly products: ProductsModule
   public readonly portal: PortalModule
 
   constructor(options: FamOptions) {
@@ -85,6 +87,7 @@ export class Fam {
     // Initialize FAM custom modules
     this.subscriptions = new SubscriptionsModule(this.client)
     this.bundles = new BundlesModule(this.client)
+    this.products = new ProductsModule(this.client)
     this.portal = new PortalModule(this.client)
   }
 
