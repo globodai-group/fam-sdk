@@ -673,9 +673,9 @@ describe('BundlesModule', () => {
   })
 
   it('should validate bundle', async () => {
-    mockSuccessResponse({ isValid: true, subscriptionsToDisable: [] })
+    mockSuccessResponse({ valid: true, errors: [], subscriptionsToDisable: [] })
     const result = await module.validate(['sub-1', 'sub-2'], 'user-123')
-    expect(result.isValid).toBe(true)
+    expect(result.valid).toBe(true)
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/validate'),
       expect.objectContaining({ method: 'POST' })
@@ -683,9 +683,9 @@ describe('BundlesModule', () => {
   })
 
   it('should get bundle price', async () => {
-    mockSuccessResponse({ totalAmount: 5000, currency: 'EUR' })
+    mockSuccessResponse({ finalPrice: 5000, originalPrice: 6000, currency: 'EUR' })
     const result = await module.getPrice(['sub-1', 'sub-2'], { billingPeriod: 'monthly' })
-    expect(result.totalAmount).toBe(5000)
+    expect(result.finalPrice).toBe(5000)
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/price'),
       expect.objectContaining({ method: 'POST' })
@@ -695,9 +695,10 @@ describe('BundlesModule', () => {
   it('should create bundle from subscriptions', async () => {
     mockSuccessResponse({ bundle: { id: 'bundle-123' } })
     const result = await module.createFromSubscriptions({
-      mangopayUserId: 'user-123',
+      name: 'Test Bundle',
       subscriptionIds: ['sub-1', 'sub-2'],
       amount: 5000,
+      billingPeriod: 'monthly',
       currency: 'EUR',
     })
     expect(result.bundle.id).toBe('bundle-123')
@@ -706,10 +707,12 @@ describe('BundlesModule', () => {
   it('should subscribe to bundle', async () => {
     mockSuccessResponse({ bundle: { id: 'bundle-123' } })
     const result = await module.subscribe({
+      name: 'Test Bundle',
       mangopayUserId: 'user-123',
       walletId: 'wallet-123',
       cardId: 'card-123',
-      products: [{ productId: 'prod-1' }],
+      externalUserId: 'ext-user-123',
+      items: [{ productType: 'mbc' }, { productType: 'ibo' }],
       amount: 5000,
       currency: 'EUR',
       billingPeriod: 'monthly',
@@ -794,7 +797,7 @@ describe('ProductsModule', () => {
 
   it('should list products with filters', async () => {
     mockSuccessResponse({ data: [{ id: 'prod-1' }], pagination: {} })
-    const result = await module.list({ isActive: true, page: 1, perPage: 10 })
+    const result = await module.list({ isActive: true, page: 1, per_page: 10 })
     expect(result.data).toHaveLength(1)
   })
 
@@ -850,13 +853,13 @@ describe('ProductsModule', () => {
   })
 
   it('should upsert product by external id', async () => {
-    mockSuccessResponse({ product: { id: 'prod-123' }, created: true })
+    mockSuccessResponse({ id: 'prod-123', name: 'Upserted Product', _created: true })
     const result = await module.upsertByExternalId('ext-123', {
       name: 'Upserted Product',
       monthlyPrice: 1000,
       yearlyPrice: 10000,
     })
-    expect(result.created).toBe(true)
+    expect(result._created).toBe(true)
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/external/ext-123'),
       expect.objectContaining({ method: 'PUT' })
@@ -864,12 +867,12 @@ describe('ProductsModule', () => {
   })
 
   it('should upsert product by name', async () => {
-    mockSuccessResponse({ product: { id: 'prod-123' }, created: false })
+    mockSuccessResponse({ id: 'prod-123', name: 'Premium Plan', _created: false })
     const result = await module.upsertByName('Premium Plan', {
       monthlyPrice: 1500,
       yearlyPrice: 15000,
     })
-    expect(result.created).toBe(false)
+    expect(result._created).toBe(false)
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/name/Premium%20Plan'),
       expect.objectContaining({ method: 'PUT' })
