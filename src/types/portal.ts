@@ -48,6 +48,14 @@ export interface CheckoutConfig {
   tag?: string
   /** Number of days for free trial (first charge delayed by this many days) */
   trialDays?: number
+  /**
+   * Number of free billing cycles (first payment is €0, then free for X cycles)
+   * Use this for downgrade from yearly to monthly - set to months remaining on yearly
+   * Takes precedence over trialDays if both are set
+   */
+  freeCycles?: number
+  /** Custom statement descriptor shown on bank statement (max 10 chars, will be truncated) */
+  statementDescriptor?: string
 }
 
 /**
