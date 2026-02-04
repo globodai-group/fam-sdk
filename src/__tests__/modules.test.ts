@@ -17,6 +17,7 @@ import {
   SubscriptionsModule,
   BundlesModule,
   ProductsModule,
+  PromotionsModule,
 } from '../modules/index.js'
 
 // Mock fetch globally
@@ -931,5 +932,445 @@ describe('ProductsModule', () => {
     })
     const result = await module.findByName('Non Existent')
     expect(result).toBeNull()
+  })
+})
+
+describe('PromotionsModule', () => {
+  let client: HttpClient
+  let module: PromotionsModule
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    client = createMockClient()
+    module = new PromotionsModule(client)
+  })
+
+  // ==========================================
+  // COUPONS
+  // ==========================================
+
+  it('should create coupon with percent discount', async () => {
+    mockSuccessResponse({
+      success: true,
+      coupon: {
+        id: 'coup-123',
+        name: 'Welcome Discount',
+        discountType: 'percent',
+        percentOff: 25,
+        duration: 'forever',
+      },
+    })
+    const result = await module.createCoupon({
+      name: 'Welcome Discount',
+      discountType: 'percent',
+      percentOff: 25,
+      duration: 'forever',
+    })
+    expect(result.success).toBe(true)
+    expect(result.coupon.id).toBe('coup-123')
+    expect(result.coupon.percentOff).toBe(25)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/promotions/coupons'),
+      expect.objectContaining({ method: 'POST' })
+    )
+  })
+
+  it('should create coupon with fixed amount discount', async () => {
+    mockSuccessResponse({
+      success: true,
+      coupon: {
+        id: 'coup-456',
+        name: 'Launch Offer',
+        discountType: 'fixed_amount',
+        amountOff: 1000,
+        currency: 'EUR',
+        duration: 'repeating',
+        durationInBillingCycles: 3,
+      },
+    })
+    const result = await module.createCoupon({
+      name: 'Launch Offer',
+      discountType: 'fixed_amount',
+      amountOff: 1000,
+      currency: 'EUR',
+      duration: 'repeating',
+      durationInBillingCycles: 3,
+    })
+    expect(result.success).toBe(true)
+    expect(result.coupon.discountType).toBe('fixed_amount')
+    expect(result.coupon.amountOff).toBe(1000)
+    expect(result.coupon.durationInBillingCycles).toBe(3)
+  })
+
+  it('should get coupon by id', async () => {
+    mockSuccessResponse({
+      success: true,
+      coupon: {
+        id: 'coup-123',
+        name: 'Welcome Discount',
+        discountType: 'percent',
+        percentOff: 25,
+      },
+    })
+    const result = await module.getCoupon('coup-123')
+    expect(result.success).toBe(true)
+    expect(result.coupon.id).toBe('coup-123')
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/promotions/coupons/coup-123'),
+      expect.any(Object)
+    )
+  })
+
+  it('should list coupons', async () => {
+    mockSuccessResponse({
+      success: true,
+      coupons: [
+        { id: 'coup-1', name: 'Coupon 1' },
+        { id: 'coup-2', name: 'Coupon 2' },
+      ],
+      meta: { total: 2, perPage: 20, currentPage: 1, lastPage: 1, firstPage: 1 },
+    })
+    const result = await module.listCoupons()
+    expect(result.success).toBe(true)
+    expect(result.coupons).toHaveLength(2)
+    expect(result.meta.total).toBe(2)
+  })
+
+  it('should list coupons with filters', async () => {
+    mockSuccessResponse({
+      success: true,
+      coupons: [{ id: 'coup-1', name: 'Active Coupon', isActive: true }],
+      meta: { total: 1, perPage: 20, currentPage: 1, lastPage: 1, firstPage: 1 },
+    })
+    const result = await module.listCoupons({
+      isActive: true,
+      discountType: 'percent',
+      page: 1,
+      per_page: 10,
+    })
+    expect(result.success).toBe(true)
+    expect(result.coupons).toHaveLength(1)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('isActive=true'),
+      expect.any(Object)
+    )
+  })
+
+  it('should update coupon', async () => {
+    mockSuccessResponse({
+      success: true,
+      coupon: {
+        id: 'coup-123',
+        name: 'Updated Coupon',
+        maxRedemptions: 100,
+      },
+    })
+    const result = await module.updateCoupon('coup-123', {
+      name: 'Updated Coupon',
+      maxRedemptions: 100,
+    })
+    expect(result.success).toBe(true)
+    expect(result.coupon.name).toBe('Updated Coupon')
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/promotions/coupons/coup-123'),
+      expect.objectContaining({ method: 'PUT' })
+    )
+  })
+
+  it('should delete coupon', async () => {
+    mockSuccessResponse({ success: true })
+    const result = await module.deleteCoupon('coup-123')
+    expect(result.success).toBe(true)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/promotions/coupons/coup-123'),
+      expect.objectContaining({ method: 'DELETE' })
+    )
+  })
+
+  it('should get coupon stats', async () => {
+    mockSuccessResponse({
+      success: true,
+      stats: {
+        totalCoupons: 10,
+        activeCoupons: 8,
+        totalRedemptions: 150,
+        totalDiscountAmount: 75000,
+      },
+    })
+    const result = await module.getCouponStats()
+    expect(result.success).toBe(true)
+    expect(result.stats.totalCoupons).toBe(10)
+    expect(result.stats.activeCoupons).toBe(8)
+    expect(result.stats.totalRedemptions).toBe(150)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/promotions/coupons/stats'),
+      expect.any(Object)
+    )
+  })
+
+  // ==========================================
+  // PROMOTION CODES
+  // ==========================================
+
+  it('should create promotion code', async () => {
+    mockSuccessResponse({
+      success: true,
+      promotionCode: {
+        id: 'promo-123',
+        couponId: 'coup-123',
+        code: 'BIENVENUE25',
+        maxRedemptions: 100,
+      },
+    })
+    const result = await module.createPromotionCode({
+      couponId: 'coup-123',
+      code: 'BIENVENUE25',
+      maxRedemptions: 100,
+    })
+    expect(result.success).toBe(true)
+    expect(result.promotionCode.code).toBe('BIENVENUE25')
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/promotions/codes'),
+      expect.objectContaining({ method: 'POST' })
+    )
+  })
+
+  it('should create promotion code with all options', async () => {
+    mockSuccessResponse({
+      success: true,
+      promotionCode: {
+        id: 'promo-456',
+        couponId: 'coup-123',
+        code: 'VIP50',
+        firstTimeOnly: true,
+        minimumAmount: 5000,
+        expiresAt: '2025-12-31T23:59:59Z',
+      },
+    })
+    const result = await module.createPromotionCode({
+      couponId: 'coup-123',
+      code: 'VIP50',
+      firstTimeOnly: true,
+      minimumAmount: 5000,
+      restrictedToUsers: ['user-1', 'user-2'],
+      expiresAt: '2025-12-31T23:59:59Z',
+      metadata: { campaign: 'vip' },
+    })
+    expect(result.success).toBe(true)
+    expect(result.promotionCode.firstTimeOnly).toBe(true)
+  })
+
+  it('should get promotion code by id', async () => {
+    mockSuccessResponse({
+      success: true,
+      promotionCode: {
+        id: 'promo-123',
+        code: 'BIENVENUE25',
+        redemptionsCount: 5,
+      },
+    })
+    const result = await module.getPromotionCode('promo-123')
+    expect(result.success).toBe(true)
+    expect(result.promotionCode.id).toBe('promo-123')
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/promotions/codes/promo-123'),
+      expect.any(Object)
+    )
+  })
+
+  it('should list promotion codes', async () => {
+    mockSuccessResponse({
+      success: true,
+      promotionCodes: [
+        { id: 'promo-1', code: 'CODE1' },
+        { id: 'promo-2', code: 'CODE2' },
+      ],
+      meta: { total: 2, perPage: 20, currentPage: 1, lastPage: 1, firstPage: 1 },
+    })
+    const result = await module.listPromotionCodes()
+    expect(result.success).toBe(true)
+    expect(result.promotionCodes).toHaveLength(2)
+  })
+
+  it('should list promotion codes with filters', async () => {
+    mockSuccessResponse({
+      success: true,
+      promotionCodes: [{ id: 'promo-1', code: 'CODE1', couponId: 'coup-123' }],
+      meta: { total: 1, perPage: 20, currentPage: 1, lastPage: 1, firstPage: 1 },
+    })
+    const result = await module.listPromotionCodes({
+      couponId: 'coup-123',
+      isActive: true,
+    })
+    expect(result.success).toBe(true)
+    expect(result.promotionCodes).toHaveLength(1)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('couponId=coup-123'),
+      expect.any(Object)
+    )
+  })
+
+  it('should update promotion code', async () => {
+    mockSuccessResponse({
+      success: true,
+      promotionCode: {
+        id: 'promo-123',
+        maxRedemptions: 200,
+        isActive: true,
+      },
+    })
+    const result = await module.updatePromotionCode('promo-123', {
+      maxRedemptions: 200,
+      isActive: true,
+    })
+    expect(result.success).toBe(true)
+    expect(result.promotionCode.maxRedemptions).toBe(200)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/promotions/codes/promo-123'),
+      expect.objectContaining({ method: 'PUT' })
+    )
+  })
+
+  it('should delete promotion code', async () => {
+    mockSuccessResponse({ success: true })
+    const result = await module.deletePromotionCode('promo-123')
+    expect(result.success).toBe(true)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/promotions/codes/promo-123'),
+      expect.objectContaining({ method: 'DELETE' })
+    )
+  })
+
+  it('should validate promotion code successfully', async () => {
+    mockSuccessResponse({
+      success: true,
+      valid: true,
+      discount: {
+        type: 'percent',
+        value: 25,
+        amountOff: 750,
+        finalAmount: 2250,
+      },
+      coupon: {
+        name: 'Welcome Discount',
+        duration: 'forever',
+        durationInBillingCycles: null,
+      },
+    })
+    const result = await module.validateCode({
+      code: 'BIENVENUE25',
+      productType: 'mbc',
+      amount: 3000,
+    })
+    expect(result.success).toBe(true)
+    expect(result.valid).toBe(true)
+    expect(result.discount?.amountOff).toBe(750)
+    expect(result.discount?.finalAmount).toBe(2250)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/promotions/codes/validate'),
+      expect.objectContaining({ method: 'POST' })
+    )
+  })
+
+  it('should validate promotion code with invalid code', async () => {
+    mockSuccessResponse({
+      success: true,
+      valid: false,
+      error: 'Code not found or expired',
+    })
+    const result = await module.validateCode({
+      code: 'INVALID',
+      amount: 3000,
+    })
+    expect(result.success).toBe(true)
+    expect(result.valid).toBe(false)
+    expect(result.error).toBe('Code not found or expired')
+  })
+
+  it('should generate multiple promotion codes', async () => {
+    mockSuccessResponse({
+      success: true,
+      couponId: 'coup-123',
+      codesGenerated: 10,
+      codes: [
+        { id: 'promo-1', code: 'PROMO001' },
+        { id: 'promo-2', code: 'PROMO002' },
+        { id: 'promo-3', code: 'PROMO003' },
+        { id: 'promo-4', code: 'PROMO004' },
+        { id: 'promo-5', code: 'PROMO005' },
+        { id: 'promo-6', code: 'PROMO006' },
+        { id: 'promo-7', code: 'PROMO007' },
+        { id: 'promo-8', code: 'PROMO008' },
+        { id: 'promo-9', code: 'PROMO009' },
+        { id: 'promo-10', code: 'PROMO010' },
+      ],
+    })
+    const result = await module.generateCodes({
+      couponId: 'coup-123',
+      count: 10,
+      prefix: 'PROMO',
+      maxRedemptions: 1,
+    })
+    expect(result.success).toBe(true)
+    expect(result.codesGenerated).toBe(10)
+    expect(result.codes).toHaveLength(10)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/promotions/codes/generate'),
+      expect.objectContaining({ method: 'POST' })
+    )
+  })
+
+  it('should generate codes with all options', async () => {
+    mockSuccessResponse({
+      success: true,
+      couponId: 'coup-123',
+      codesGenerated: 5,
+      codes: [
+        { id: 'promo-1', code: 'SUMMER001' },
+        { id: 'promo-2', code: 'SUMMER002' },
+        { id: 'promo-3', code: 'SUMMER003' },
+        { id: 'promo-4', code: 'SUMMER004' },
+        { id: 'promo-5', code: 'SUMMER005' },
+      ],
+    })
+    const result = await module.generateCodes({
+      couponId: 'coup-123',
+      count: 5,
+      prefix: 'SUMMER',
+      maxRedemptions: 1,
+      firstTimeOnly: true,
+      expiresAt: '2025-09-30T23:59:59Z',
+    })
+    expect(result.success).toBe(true)
+    expect(result.codesGenerated).toBe(5)
+  })
+
+  it('should find promotion code by code string', async () => {
+    mockSuccessResponse({
+      success: true,
+      promotionCode: {
+        id: 'promo-123',
+        code: 'BIENVENUE25',
+        couponId: 'coup-123',
+        isActive: true,
+      },
+    })
+    const result = await module.findByCode('BIENVENUE25')
+    expect(result.success).toBe(true)
+    expect(result.promotionCode?.code).toBe('BIENVENUE25')
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/promotions/codes/by-code/BIENVENUE25'),
+      expect.any(Object)
+    )
+  })
+
+  it('should return null when code not found', async () => {
+    mockSuccessResponse({
+      success: true,
+      promotionCode: null,
+    })
+    const result = await module.findByCode('NONEXISTENT')
+    expect(result.success).toBe(true)
+    expect(result.promotionCode).toBeNull()
   })
 })

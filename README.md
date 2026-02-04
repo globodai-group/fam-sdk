@@ -1124,6 +1124,274 @@ console.log('Re-enabled subscriptions:', result.reenabledSubscriptionIds);
 
 </details>
 
+### Promotions
+
+Stripe-like promotion system for discounts. Create coupons that define discount rules, then generate customer-facing promotion codes.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Coupon (discount rules) → Promotion Code (customer-facing)        │
+│                                                                     │
+│  Coupon: "25% off for 3 months"                                     │
+│  Promotion Codes: "WELCOME25", "BLACKFRIDAY", "PARTNER50"           │
+│                                                                     │
+│  User enters code → Validated → Applied to checkout                 │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+<details open>
+<summary><strong>Create Coupons</strong></summary>
+
+```typescript
+// 25% off forever
+const coupon = await fam.promotions.createCoupon({
+  name: 'Welcome Discount',
+  discountType: 'percent',
+  percentOff: 25,
+  duration: 'forever',
+});
+
+// €10 off for first 3 months
+const coupon = await fam.promotions.createCoupon({
+  name: 'Launch Offer',
+  discountType: 'fixed_amount',
+  amountOff: 1000,  // 10.00€ in cents
+  currency: 'EUR',
+  duration: 'repeating',
+  durationInBillingCycles: 3,
+});
+
+// One-time discount with restrictions
+const coupon = await fam.promotions.createCoupon({
+  name: 'Premium Discount',
+  discountType: 'percent',
+  percentOff: 50,
+  duration: 'once',
+  maxRedemptions: 100,
+  appliesToProducts: ['mbc', 'premium'],  // Only these products
+  minimumAmount: 2000,  // Min 20.00€ order
+  validUntil: '2024-12-31',
+});
+
+// Get and list coupons
+const coupon = await fam.promotions.getCoupon(couponId);
+const { coupons, meta } = await fam.promotions.listCoupons({ isActive: true });
+
+// Update and delete
+await fam.promotions.updateCoupon(couponId, { isActive: false });
+await fam.promotions.deleteCoupon(couponId);
+
+// Get statistics
+const { stats } = await fam.promotions.getCouponStats();
+console.log(`Total redemptions: ${stats.totalRedemptions}`);
+console.log(`Total discount given: ${stats.totalDiscountAmount / 100}€`);
+```
+
+</details>
+
+<details>
+<summary><strong>Create Promotion Codes</strong></summary>
+
+```typescript
+// Create a code for a coupon
+const code = await fam.promotions.createPromotionCode({
+  couponId: 'coup_xxx',
+  code: 'WELCOME25',  // Auto-generated if not provided
+  maxRedemptions: 100,  // Optional usage limit
+});
+
+// Code for first-time customers only
+const code = await fam.promotions.createPromotionCode({
+  couponId: 'coup_xxx',
+  code: 'NEWUSER50',
+  firstTimeOnly: true,
+});
+
+// Code restricted to specific users
+const code = await fam.promotions.createPromotionCode({
+  couponId: 'coup_xxx',
+  code: 'VIP-SPECIAL',
+  restrictedToUsers: ['user_uuid_1', 'user_uuid_2'],
+  expiresAt: '2024-12-31T23:59:59Z',
+});
+
+// Generate multiple codes at once (e.g., for influencers)
+const result = await fam.promotions.generateCodes({
+  couponId: 'coup_xxx',
+  count: 100,
+  prefix: 'PARTNER',  // Results: PARTNER-A1B2C3, PARTNER-X4Y5Z6...
+  maxRedemptions: 1,  // Single use each
+});
+console.log(`Generated ${result.codesGenerated} codes`);
+
+// Get and list codes
+const code = await fam.promotions.getPromotionCode(codeId);
+const codeByString = await fam.promotions.findByCode('WELCOME25');
+const { promotionCodes, meta } = await fam.promotions.listPromotionCodes({
+  couponId: 'coup_xxx',
+  isActive: true,
+});
+
+// Update and delete
+await fam.promotions.updatePromotionCode(codeId, { isActive: false });
+await fam.promotions.deletePromotionCode(codeId);
+```
+
+</details>
+
+<details>
+<summary><strong>Validate Code at Checkout</strong></summary>
+
+```typescript
+// Validate before applying
+const validation = await fam.promotions.validateCode({
+  code: 'WELCOME25',
+  productType: 'mbc',  // Optional: check product eligibility
+  amount: 2900,  // Amount in cents
+});
+
+if (validation.valid) {
+  console.log(`Discount type: ${validation.discount.type}`);
+  console.log(`Discount value: ${validation.discount.value}`);
+  console.log(`Amount off: ${validation.discount.amountOff / 100}€`);
+  console.log(`Final price: ${validation.discount.finalAmount / 100}€`);
+  console.log(`Coupon: ${validation.coupon.name}`);
+  console.log(`Duration: ${validation.coupon.duration}`);
+} else {
+  console.log(`Invalid: ${validation.error}`);
+  // Possible errors:
+  // - "Code promo inactif"
+  // - "Code promo expiré"
+  // - "Code promo épuisé"
+  // - "Code promo non autorisé pour cet utilisateur"
+  // - "Code promo réservé aux nouveaux clients"
+  // - "Montant minimum requis: X€"
+}
+```
+
+</details>
+
+<details>
+<summary><strong>Apply Code in Portal Checkout</strong></summary>
+
+```typescript
+// Option 1: Let user enter code in checkout
+const session = await fam.portal.createSession({
+  mangopayUserId: 'user_m_01HXK...',
+  returnUrl: 'https://myapp.com/success',
+  checkoutConfig: {
+    productType: 'subscription',
+    productLabel: 'Premium Plan',
+    amount: 2900,
+    isRecurring: true,
+    frequency: 'MONTHLY',
+    allowPromotionCodes: true,  // Shows promo code input
+    creditedWalletId: 'wallet_123',
+    externalUserId: 'your-app-user-id',
+  },
+});
+
+// Option 2: Pre-apply a code (e.g., from URL param or referral)
+const session = await fam.portal.createSession({
+  mangopayUserId: 'user_m_01HXK...',
+  returnUrl: 'https://myapp.com/success',
+  checkoutConfig: {
+    productType: 'subscription',
+    productLabel: 'Premium Plan',
+    amount: 2900,  // Original price (discount calculated server-side)
+    isRecurring: true,
+    frequency: 'MONTHLY',
+    promotionCode: 'WELCOME25',  // Pre-applied code
+    creditedWalletId: 'wallet_123',
+    externalUserId: 'your-app-user-id',
+  },
+});
+
+// User sees: "Premium Plan - ~~29.00€~~ 21.75€/month (WELCOME25: -25%)"
+```
+
+</details>
+
+<details>
+<summary><strong>Coupon Duration Types</strong></summary>
+
+| Duration | Description | Use Case |
+|----------|-------------|----------|
+| `forever` | Discount applies to all future payments | Loyalty rewards, permanent discounts |
+| `once` | Discount applies only to the first payment | Welcome offers, one-time promotions |
+| `repeating` | Discount applies for X billing cycles | Limited-time promotions, "3 months free" |
+
+```typescript
+// Forever: Every payment is discounted
+await fam.promotions.createCoupon({
+  name: 'VIP Forever',
+  discountType: 'percent',
+  percentOff: 10,
+  duration: 'forever',
+});
+
+// Once: Only first payment discounted
+await fam.promotions.createCoupon({
+  name: 'Welcome Bonus',
+  discountType: 'fixed_amount',
+  amountOff: 500,
+  duration: 'once',
+});
+
+// Repeating: Discount for 6 billing cycles
+await fam.promotions.createCoupon({
+  name: '6 Months Deal',
+  discountType: 'percent',
+  percentOff: 30,
+  duration: 'repeating',
+  durationInBillingCycles: 6,
+});
+```
+
+</details>
+
+<details>
+<summary><strong>Promotion Types Reference</strong></summary>
+
+```typescript
+// Coupon discount types
+type CouponDiscountType = 'percent' | 'fixed_amount';
+
+// Coupon duration
+type CouponDuration = 'forever' | 'once' | 'repeating';
+
+// Create coupon request
+interface CreateCouponRequest {
+  name: string;
+  discountType: CouponDiscountType;
+  percentOff?: number;           // 1-100 (required if discountType = 'percent')
+  amountOff?: number;            // In cents (required if discountType = 'fixed_amount')
+  currency?: string;             // Default: EUR
+  duration: CouponDuration;
+  durationInBillingCycles?: number;  // Required if duration = 'repeating'
+  maxRedemptions?: number;       // Global usage limit
+  appliesToProducts?: string[];  // Product types (empty = all)
+  minimumAmount?: number;        // Minimum order in cents
+  validFrom?: string;            // Default: now
+  validUntil?: string;           // Null = never expires
+  metadata?: Record<string, unknown>;
+}
+
+// Create promotion code request
+interface CreatePromotionCodeRequest {
+  couponId: string;
+  code?: string;                 // Auto-generated if not provided
+  maxRedemptions?: number;       // Per-code usage limit
+  firstTimeOnly?: boolean;       // Only for new customers
+  minimumAmount?: number;        // Override coupon's minimum
+  restrictedToUsers?: string[];  // Specific user UUIDs
+  expiresAt?: string;
+  metadata?: Record<string, unknown>;
+}
+```
+
+</details>
+
 ### Portal
 
 The Portal module provides methods to create sessions for the FAM Payment Portal, where users can manage their subscriptions, cards, and invoices.
@@ -1406,6 +1674,8 @@ await fam.portal.logout('session-token');
 | `trialDays` | number | ❌ | Days before first charge |
 | `freeCycles` | number | ❌ | Number of free billing cycles |
 | `statementDescriptor` | string | ❌ | Bank statement text (max 10 chars) |
+| `allowPromotionCodes` | boolean | ❌ | Shows promo code input in checkout |
+| `promotionCode` | string | ❌ | Pre-applied promotion code |
 
 </details>
 
@@ -1546,6 +1816,20 @@ import type {
   GetPortalUserResponse,
   RefreshPortalSessionResponse,
   PortalLogoutResponse,
+
+  // Promotions
+  Coupon,
+  PromotionCode,
+  PromotionCodeUsage,
+  CreateCouponRequest,
+  UpdateCouponRequest,
+  CreatePromotionCodeRequest,
+  UpdatePromotionCodeRequest,
+  ValidatePromotionCodeRequest,
+  ValidatePromotionCodeResponse,
+  GenerateCodesRequest,
+  GenerateCodesResponse,
+  CouponStats,
 } from 'globodai-fam-sdk';
 ```
 

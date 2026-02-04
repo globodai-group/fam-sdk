@@ -56,6 +56,17 @@ export interface CheckoutConfig {
   freeCycles?: number
   /** Custom statement descriptor shown on bank statement (max 10 chars, will be truncated) */
   statementDescriptor?: string
+  /**
+   * Allow promotion codes in checkout
+   * If true, shows a promo code input field in the checkout form
+   */
+  allowPromotionCodes?: boolean
+  /**
+   * Pre-applied promotion code
+   * If set, the code will be validated and applied at checkout
+   * The portal will show the discount without requiring user input
+   */
+  promotionCode?: string | null
 }
 
 /**
