@@ -650,10 +650,12 @@ console.log('Re-enabled subscriptions:', result.reenabledSubscriptionIds);
 The Portal module provides methods to create sessions for the FAM Payment Portal, where users can manage their subscriptions, cards, and invoices.
 
 <details open>
-<summary><strong>Session Management</strong></summary>
+<summary><strong>Simple Portal Redirect (No Checkout)</strong></summary>
+
+Redirect users to the portal to manage their existing subscriptions, cards, and invoices without initiating a new checkout.
 
 ```typescript
-// Create a portal session
+// Create a portal session without checkout
 const session = await fam.portal.createSession({
   mangopayUserId: 'user_m_01HXK...',
   returnUrl: 'https://myapp.com/dashboard',
@@ -661,28 +663,231 @@ const session = await fam.portal.createSession({
 });
 
 // Redirect user to portal
-console.log('Portal URL:', session.data.url);
-// window.location.href = session.data.url
+window.location.href = session.data.url;
+// User sees: subscription list, cards, invoices, etc.
+```
 
+</details>
+
+<details>
+<summary><strong>Checkout Without Discount</strong></summary>
+
+Create a checkout session for a new subscription at full price.
+
+```typescript
+// Basic checkout - monthly subscription at full price
+const session = await fam.portal.createSession({
+  mangopayUserId: 'user_m_01HXK...',
+  returnUrl: 'https://myapp.com/success',
+  checkoutConfig: {
+    productType: 'subscription',
+    productLabel: 'Premium Plan',
+    productDescription: 'Access to all premium features',
+    amount: 2900,  // 29.00€ in cents
+    currency: 'EUR',
+    isRecurring: true,
+    frequency: 'MONTHLY',  // Locks to monthly (no selector)
+    creditedWalletId: 'wallet_123',
+    creditedUserId: 'user_456',  // optional, for fees
+    externalUserId: 'your-app-user-id',
+    externalSubscriptionId: 'your-sub-id',  // optional
+    metadata: { plan: 'premium', source: 'upgrade' },
+  },
+});
+
+// User sees: "Premium Plan - 29.00€/month"
+```
+
+</details>
+
+<details>
+<summary><strong>Checkout With Frequency Selector</strong></summary>
+
+Let users choose between monthly and yearly billing.
+
+```typescript
+// Checkout with frequency choice (monthly/yearly)
+const session = await fam.portal.createSession({
+  mangopayUserId: 'user_m_01HXK...',
+  returnUrl: 'https://myapp.com/success',
+  checkoutConfig: {
+    productType: 'subscription',
+    productLabel: 'Premium Plan',
+    amount: 2900,           // 29.00€/month
+    yearlyAmount: 29000,    // 290.00€/year (annual price)
+    yearlySavingsLabel: '2 mois offerts',  // or "-17%"
+    isRecurring: true,
+    // frequency NOT set = shows selector
+    creditedWalletId: 'wallet_123',
+    externalUserId: 'your-app-user-id',
+  },
+});
+
+// User sees: Toggle between "29.00€/month" and "290.00€/year (2 mois offerts)"
+```
+
+</details>
+
+<details>
+<summary><strong>Checkout With Discount</strong></summary>
+
+Apply a promotional discount to the checkout.
+
+```typescript
+// Checkout with discount applied
+const session = await fam.portal.createSession({
+  mangopayUserId: 'user_m_01HXK...',
+  returnUrl: 'https://myapp.com/success',
+  checkoutConfig: {
+    productType: 'subscription',
+    productLabel: 'Premium Plan',
+    amount: 1900,            // Discounted price: 19.00€
+    originalAmount: 2900,    // Original price: 29.00€ (strikethrough)
+    hasDiscount: true,
+    discountLabel: '-35% Black Friday',  // Shown as badge
+    isRecurring: true,
+    frequency: 'MONTHLY',
+    creditedWalletId: 'wallet_123',
+    externalUserId: 'your-app-user-id',
+  },
+});
+
+// User sees: "~~29.00€~~ 19.00€/month" with "-35% Black Friday" badge
+```
+
+</details>
+
+<details>
+<summary><strong>Checkout With Free Trial</strong></summary>
+
+Offer a free trial period before the first charge.
+
+```typescript
+// Checkout with 14-day free trial
+const session = await fam.portal.createSession({
+  mangopayUserId: 'user_m_01HXK...',
+  returnUrl: 'https://myapp.com/success',
+  checkoutConfig: {
+    productType: 'subscription',
+    productLabel: 'Premium Plan',
+    amount: 2900,
+    isRecurring: true,
+    frequency: 'MONTHLY',
+    trialDays: 14,  // First charge in 14 days
+    creditedWalletId: 'wallet_123',
+    externalUserId: 'your-app-user-id',
+  },
+});
+
+// User sees: "Premium Plan - 29.00€/month after 14-day free trial"
+// First MIT will be scheduled 14 days after card registration
+```
+
+</details>
+
+<details>
+<summary><strong>Checkout With Free Cycles</strong></summary>
+
+Offer free billing cycles (useful for downgrades from yearly to monthly).
+
+```typescript
+// Checkout with 3 free months (e.g., downgrade from yearly)
+const session = await fam.portal.createSession({
+  mangopayUserId: 'user_m_01HXK...',
+  returnUrl: 'https://myapp.com/success',
+  checkoutConfig: {
+    productType: 'subscription',
+    productLabel: 'Premium Plan',
+    amount: 2900,
+    isRecurring: true,
+    frequency: 'MONTHLY',
+    freeCycles: 3,  // 3 months free, then charges start
+    creditedWalletId: 'wallet_123',
+    externalUserId: 'your-app-user-id',
+  },
+});
+
+// User sees: "Premium Plan - 29.00€/month (3 mois offerts)"
+// First 3 MIT payments will be 0€, then normal pricing
+// Note: freeCycles takes precedence over trialDays if both set
+```
+
+</details>
+
+<details>
+<summary><strong>Checkout With Discount + Frequency Selector</strong></summary>
+
+Combine discount with monthly/yearly choice.
+
+```typescript
+// Full featured checkout
+const session = await fam.portal.createSession({
+  mangopayUserId: 'user_m_01HXK...',
+  returnUrl: 'https://myapp.com/success',
+  checkoutConfig: {
+    productType: 'subscription',
+    productLabel: 'Premium Plan',
+    productDescription: 'Unlock all premium features',
+    // Discounted prices
+    amount: 1900,               // Monthly: 19.00€
+    originalAmount: 2900,       // Was: 29.00€
+    yearlyAmount: 19000,        // Yearly: 190.00€
+    hasDiscount: true,
+    discountLabel: 'CODE: LAUNCH50',
+    yearlySavingsLabel: '2 mois offerts',
+    isRecurring: true,
+    // No frequency = shows selector
+    creditedWalletId: 'wallet_123',
+    externalUserId: 'your-app-user-id',
+    statementDescriptor: 'MYAPP-PREM',  // Bank statement (max 10 chars)
+    tag: 'campaign:launch2024',
+  },
+});
+```
+
+</details>
+
+<details>
+<summary><strong>Filter Subscriptions by User</strong></summary>
+
+When multiple app users share a MangoPay account, filter visible subscriptions.
+
+```typescript
+// Only show subscriptions for a specific external user
+const session = await fam.portal.createSession({
+  mangopayUserId: 'user_m_01HXK...',  // Shared MangoPay account
+  returnUrl: 'https://myapp.com/dashboard',
+  filterByExternalUserId: 'app-user-123',  // Only their subscriptions
+});
+
+// Portal only shows subscriptions where externalUserId matches
+```
+
+</details>
+
+<details>
+<summary><strong>Session Management</strong></summary>
+
+```typescript
 // Validate session (called by portal frontend)
 const result = await fam.portal.validateSession({
   token: 'session-token-from-url',
 });
 
 if (result.valid) {
-  const { user, website } = result.data;
+  const { user, website, checkoutConfig } = result.data;
   console.log(`Welcome ${user.firstName}`);
-  // Apply website theming
+
+  if (checkoutConfig) {
+    // Checkout flow
+    console.log(`Checkout for: ${checkoutConfig.productLabel}`);
+  } else {
+    // Management flow
+    console.log('Showing subscriptions and cards');
+  }
 }
-```
 
-</details>
-
-<details>
-<summary><strong>Portal User Operations</strong></summary>
-
-```typescript
-// Get current portal user (requires session token)
+// Get current portal user (requires session token header)
 const user = await fam.portal.getUser('session-token');
 console.log(`Hello ${user.data.firstName}`);
 
@@ -693,6 +898,35 @@ console.log(`Session extended until ${refreshed.data.expiresAt}`);
 // Logout (invalidate session)
 await fam.portal.logout('session-token');
 ```
+
+</details>
+
+<details>
+<summary><strong>CheckoutConfig Reference</strong></summary>
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `productType` | string | ✅ | Product identifier (e.g., 'subscription', 'course') |
+| `productLabel` | string | ✅ | Display name |
+| `productDescription` | string | ❌ | Optional description |
+| `amount` | number | ✅ | Price in cents (monthly if selector shown) |
+| `currency` | string | ❌ | Currency code (default: EUR) |
+| `isRecurring` | boolean | ✅ | Recurring payment flag |
+| `frequency` | 'MONTHLY' \| 'YEARLY' | ❌ | Lock frequency (omit to show selector) |
+| `yearlyAmount` | number | ❌ | Yearly price in cents (for selector) |
+| `yearlySavingsLabel` | string | ❌ | Savings badge (e.g., "2 mois offerts") |
+| `hasDiscount` | boolean | ❌ | Discount applied flag |
+| `discountLabel` | string | ❌ | Discount badge text |
+| `originalAmount` | number | ❌ | Original price before discount (strikethrough) |
+| `creditedWalletId` | string | ✅ | Merchant wallet to receive payment |
+| `creditedUserId` | string | ❌ | Merchant user ID (for fees) |
+| `externalUserId` | string | ✅ | User ID in your application |
+| `externalSubscriptionId` | string | ❌ | Subscription ID in your application |
+| `metadata` | object | ❌ | Custom metadata |
+| `tag` | string | ❌ | MangoPay tag (max 255 chars) |
+| `trialDays` | number | ❌ | Days before first charge |
+| `freeCycles` | number | ❌ | Number of free billing cycles |
+| `statementDescriptor` | string | ❌ | Bank statement text (max 10 chars) |
 
 </details>
 
@@ -823,9 +1057,16 @@ import type {
   BundlePriceInfo,
 
   // Portal
+  CheckoutConfig,
+  PortalUser,
+  PortalWebsiteConfig,
   CreatePortalSessionRequest,
   CreatePortalSessionResponse,
+  ValidatePortalSessionRequest,
   ValidatePortalSessionResponse,
+  GetPortalUserResponse,
+  RefreshPortalSessionResponse,
+  PortalLogoutResponse,
 } from 'globodai-fam-sdk';
 ```
 
