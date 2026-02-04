@@ -106,7 +106,7 @@ export class ProductsModule extends BaseModule {
    */
   async upsertByName(
     name: string,
-    data: Omit<UpsertProductRequest, 'name'>
+    data: Omit<UpsertProductRequest, 'name'> & { externalId?: string }
   ): Promise<UpsertProductResponse> {
     return this.put<UpsertProductResponse>(`name/${encodeURIComponent(name)}`, data)
   }

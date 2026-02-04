@@ -50,6 +50,7 @@ export {
   PortalModule,
   PreauthorizationsModule,
   ProductsModule,
+  PromotionsModule,
   ScaRecipientsModule,
   SubscriptionsModule,
   TransfersModule,
