@@ -14,6 +14,7 @@ import {
   PortalModule,
   PreauthorizationsModule,
   ProductsModule,
+  PromotionsModule,
   ScaRecipientsModule,
   SubscriptionsModule,
   TransfersModule,
@@ -67,6 +68,7 @@ export class Fam {
   public readonly subscriptions: SubscriptionsModule
   public readonly bundles: BundlesModule
   public readonly products: ProductsModule
+  public readonly promotions: PromotionsModule
   public readonly portal: PortalModule
 
   constructor(options: FamOptions) {
@@ -88,6 +90,7 @@ export class Fam {
     this.subscriptions = new SubscriptionsModule(this.client)
     this.bundles = new BundlesModule(this.client)
     this.products = new ProductsModule(this.client)
+    this.promotions = new PromotionsModule(this.client)
     this.portal = new PortalModule(this.client)
   }
 
