@@ -457,25 +457,504 @@ const recipient = await recipients.create({
 
 ### Subscriptions
 
+FAM Subscriptions wrap MangoPay's RecurringPayinRegistration to provide a simpler subscription management experience. The flow works as follows:
+
+1. **CIT (Customer-Initiated Transaction)**: First payment with 3DS authentication
+2. **MIT (Merchant-Initiated Transaction)**: Automatic recurring payments without user intervention
+3. **FAM handles scheduling**: Automatic MIT processing based on frequency
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  User subscribes → CIT (3DS) → Card saved → MIT scheduled          │
+│                                                                     │
+│  Monthly: MIT every 30 days                                         │
+│  Yearly: MIT every 365 days                                         │
+│                                                                     │
+│  Webhooks: FAM_SUBSCRIPTION_PAYMENT_SUCCEEDED                       │
+│            FAM_SUBSCRIPTION_PAYMENT_FAILED                          │
+│            FAM_SUBSCRIPTION_CREATED                                 │
+│            FAM_SUBSCRIPTION_CANCELLED                               │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+<details open>
+<summary><strong>Register & Get Subscriptions</strong></summary>
+
 ```typescript
-// Register a subscription
+// Register a new recurring subscription
 const subscription = await fam.subscriptions.register({
-  UserId: userId,
-  WalletId: walletId,
-  CardId: cardId,
-  Amount: { Amount: 999, Currency: 'EUR' },
-  Frequency: 'MONTHLY',
+  userId: 'internal-user-id',
+  mangopayUserId: 'mango_user_123',
+  walletId: 'wallet_123',
+  cardId: 'card_123',
+  amount: 2900,  // 29.00€ in cents
+  currency: 'EUR',
+  frequency: 'MONTHLY',  // 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'
+  startDate: '2024-01-15',  // optional
+  endDate: '2025-01-15',    // optional
+  metadata: { plan: 'premium' },
+  webhookNotificationEnabled: true,
+  nextProcessingAt: '2024-02-15',  // optional: defer first MIT payment
 });
 
-// Manage subscriptions
-const subscriptions = await fam.subscriptions.list({ UserId: userId });
+// Get subscription details (includes last 10 payments)
 const subscription = await fam.subscriptions.getSubscription(subscriptionId);
+console.log(`Status: ${subscription.status}`);
+console.log(`Next payment: ${subscription.nextProcessingAt}`);
+console.log(`Payments:`, subscription.payments);
 
-// Lifecycle operations
-await fam.subscriptions.enable(subscriptionId);
-await fam.subscriptions.disable(subscriptionId);
-await fam.subscriptions.cancel(subscriptionId);
+// List subscriptions with filters
+const { data, meta } = await fam.subscriptions.list({
+  userId: 'user_123',
+  status: 'ACTIVE',  // 'ACTIVE' | 'PAUSED' | 'CANCELLED' | 'ENDED' | 'FAILED'
+  frequency: 'MONTHLY',
+  page: 1,
+  perPage: 20,
+});
+
+// List subscriptions for a specific MangoPay user
+const { subscriptions } = await fam.subscriptions.listByMangopayUser(
+  'mango_user_123',
+  { subscriptionType: 'mbc', activeOnly: true }
+);
 ```
+
+</details>
+
+<details>
+<summary><strong>Update Subscriptions</strong></summary>
+
+```typescript
+// Update subscription by ID
+await fam.subscriptions.update(subscriptionId, {
+  amount: 3900,                    // New price in cents
+  subscriptionName: 'Plan Pro',    // Display name in portal
+  subscriptionType: 'premium',     // Product type
+  billingPeriod: 'monthly',        // 'monthly' | 'yearly'
+  cardId: 'new_card_123',          // Change payment card
+  endDate: '2025-12-31',           // Set end date
+  processingEnabled: true,
+  webhookNotificationEnabled: true,
+  bundleId: 'bundle_123',          // Attach to bundle (or null to detach)
+  metadata: { tier: 'gold' },
+});
+
+// Update by MangoPay registration ID (useful after bundle splits)
+await fam.subscriptions.updateByRegistrationId('reg_mp_123', {
+  subscriptionName: 'MBC Premium',
+  bundleId: null,  // Detach from bundle
+});
+
+// Sync subscription state from MangoPay
+const { subscription, synced, mangopayStatus } = await fam.subscriptions.sync(subscriptionId);
+if (synced) {
+  console.log(`Synced! MangoPay status: ${mangopayStatus}`);
+}
+```
+
+</details>
+
+<details>
+<summary><strong>Lifecycle Operations</strong></summary>
+
+```typescript
+// Enable/disable processing (pauses/resumes payments)
+await fam.subscriptions.enable(subscriptionId);   // Resume payments
+await fam.subscriptions.disable(subscriptionId);  // Pause payments
+
+// Enable/disable webhook notifications
+await fam.subscriptions.enableWebhooks(subscriptionId);
+await fam.subscriptions.disableWebhooks(subscriptionId);
+
+// Cancel subscription (soft cancel)
+// - Disables local processing
+// - Keeps MangoPay registration active (can be re-enabled)
+// - Use when modifying bundles (removing one product)
+await fam.subscriptions.cancel(subscriptionId);
+
+// End subscription (hard cancel)
+// - Terminates MangoPay RecurringPayinRegistration (Status = ENDED)
+// - Cannot be re-enabled
+// - Use when completely cancelling the subscription
+await fam.subscriptions.end(subscriptionId);
+```
+
+</details>
+
+<details>
+<summary><strong>Modify Price (Upgrade/Downgrade)</strong></summary>
+
+Update the amount charged for a subscription. The new price takes effect on the next billing cycle.
+
+```typescript
+// Increase price (upgrade)
+await fam.subscriptions.update(subscriptionId, {
+  amount: 4900,  // New price: 49.00€ (in cents)
+});
+
+// Decrease price (downgrade)
+await fam.subscriptions.update(subscriptionId, {
+  amount: 1900,  // New price: 19.00€ (in cents)
+});
+
+// Update price with other fields
+await fam.subscriptions.update(subscriptionId, {
+  amount: 3900,
+  subscriptionName: 'Plan Premium',
+  metadata: { tier: 'premium', upgradedAt: new Date().toISOString() },
+});
+```
+
+**Important notes:**
+- Price changes apply to the **next scheduled payment**, not retroactively
+- MangoPay RecurringPayinRegistration is automatically updated
+- If updating a bundle subscription, consider using `bundles.update()` instead
+
+</details>
+
+<details>
+<summary><strong>Link Products to Subscription</strong></summary>
+
+Associate FAM products with a subscription for tracking and reporting.
+
+```typescript
+// Preferred: Link by FAM product IDs
+const result = await fam.subscriptions.linkProducts(subscriptionId, {
+  productIds: ['prod_abc', 'prod_def'],
+  clearExisting: true,  // Remove existing links first
+});
+
+console.log('Linked products:', result.linkedProducts);
+// [{ productId: 'prod_abc', productName: 'MBC', expectedAmount: 2900, isNew: true }]
+
+// Single product
+await fam.subscriptions.linkProducts(subscriptionId, {
+  productId: 'prod_abc',
+});
+
+// Fallback: Link by product type (looks up products)
+await fam.subscriptions.linkProducts(subscriptionId, {
+  productTypes: ['mbc', 'ibo', 'global'],
+});
+
+// Handle not found products
+if (result.notFoundIds?.length) {
+  console.warn('Products not found:', result.notFoundIds);
+}
+```
+
+</details>
+
+<details>
+<summary><strong>Change Billing Frequency</strong></summary>
+
+Switching between monthly and yearly requires creating a new subscription (MangoPay limitation).
+
+```typescript
+// Example: Upgrade from monthly to yearly
+async function upgradeToYearly(currentSubscriptionId: string, userId: string) {
+  // 1. Get current subscription details
+  const current = await fam.subscriptions.getSubscription(currentSubscriptionId);
+
+  // 2. Create new yearly subscription via Portal
+  const session = await fam.portal.createSession({
+    mangopayUserId: userId,
+    returnUrl: 'https://myapp.com/upgrade-success',
+    checkoutConfig: {
+      productType: current.subscriptionType || 'subscription',
+      productLabel: current.subscriptionName || 'Premium Plan',
+      amount: 29000,  // Yearly price
+      currency: 'EUR',
+      isRecurring: true,
+      frequency: 'YEARLY',
+      hasDiscount: true,
+      discountLabel: '2 months free',
+      originalAmount: 34800,  // 29€ x 12 months
+      creditedWalletId: 'wallet_123',
+      externalUserId: current.externalUserId,
+    },
+  });
+
+  // 3. After user completes checkout, cancel old subscription
+  // (Do this in your webhook handler for FAM_SUBSCRIPTION_CREATED)
+  await fam.subscriptions.cancel(currentSubscriptionId);
+
+  return session.data.url;
+}
+```
+
+**Downgrade from yearly to monthly with credit:**
+
+```typescript
+async function downgradeToMonthly(currentSubscriptionId: string, userId: string) {
+  const current = await fam.subscriptions.getSubscription(currentSubscriptionId);
+
+  // Calculate remaining months credit
+  const remainingMonths = calculateRemainingMonths(current.nextProcessingAt);
+
+  // Create new monthly subscription with free cycles
+  const session = await fam.portal.createSession({
+    mangopayUserId: userId,
+    returnUrl: 'https://myapp.com/downgrade-success',
+    checkoutConfig: {
+      productType: current.subscriptionType || 'subscription',
+      productLabel: current.subscriptionName || 'Premium Plan',
+      amount: 2900,  // Monthly price
+      currency: 'EUR',
+      isRecurring: true,
+      frequency: 'MONTHLY',
+      freeCycles: remainingMonths,  // Credit remaining yearly time
+      creditedWalletId: 'wallet_123',
+      externalUserId: current.externalUserId,
+    },
+  });
+
+  return session.data.url;
+}
+```
+
+</details>
+
+<details>
+<summary><strong>Prorate Bundle Price Changes</strong></summary>
+
+When modifying bundles (adding/removing subscriptions), use proration.
+
+```typescript
+// Get proration info before modifying
+const priceInfo = await fam.bundles.getPrice(
+  ['sub_1', 'sub_2', 'sub_3'],  // New subscription list
+  { billingPeriod: 'monthly' }
+);
+
+console.log(`New bundle price: ${priceInfo.amount / 100}€`);
+console.log(`Proration credit: ${priceInfo.prorationCredit / 100}€`);
+console.log(`Amount due today: ${priceInfo.amountDueNow / 100}€`);
+
+// Apply the change with new price
+await fam.bundles.update(bundleId, {
+  amount: priceInfo.amount,
+});
+
+// Or add/remove subscriptions (price updated automatically)
+await fam.bundles.addSubscriptions(bundleId, ['sub_4'], newTotalAmount);
+await fam.bundles.removeSubscriptions(bundleId, ['sub_2'], newTotalAmount);
+```
+
+</details>
+
+<details>
+<summary><strong>Subscription Types Reference</strong></summary>
+
+```typescript
+// Subscription status
+type SubscriptionStatus =
+  | 'ACTIVE'               // Currently active and processing
+  | 'PAUSED'               // Temporarily paused
+  | 'CANCELLED'            // Cancelled (soft - can be re-enabled)
+  | 'ENDED'                // Ended in MangoPay (permanent)
+  | 'FAILED'               // Payment failed
+  | 'AUTHENTICATION_NEEDED'; // 3DS authentication required
+
+// Subscription frequency
+type SubscriptionFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+
+// Payment status
+type SubscriptionPaymentStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED';
+
+// Update request fields
+interface UpdateSubscriptionRequest {
+  amount?: number;                    // Price in cents
+  cardId?: string;                    // Payment card
+  endDate?: string;                   // End date
+  processingEnabled?: boolean;        // Enable/disable processing
+  webhookNotificationEnabled?: boolean;
+  subscriptionName?: string;          // Display name
+  subscriptionType?: string;          // Product type
+  billingPeriod?: string;             // 'monthly' | 'yearly'
+  bundleId?: string | null;           // Attach/detach bundle
+  metadata?: Record<string, unknown>;
+}
+```
+
+</details>
+
+<details>
+<summary><strong>Common Use Cases & Examples</strong></summary>
+
+**1. User wants to pause their subscription temporarily:**
+
+```typescript
+async function pauseSubscription(subscriptionId: string) {
+  // Disable processing - no more automatic payments
+  await fam.subscriptions.disable(subscriptionId);
+
+  // User can resume later
+  // await fam.subscriptions.enable(subscriptionId);
+}
+```
+
+**2. User wants to cancel and get a refund for remaining time:**
+
+```typescript
+async function cancelWithRefund(subscriptionId: string) {
+  const subscription = await fam.subscriptions.getSubscription(subscriptionId);
+
+  // Calculate prorated refund for yearly subscriptions
+  if (subscription.frequency === 'YEARLY') {
+    const now = new Date();
+    const nextPayment = new Date(subscription.nextProcessingAt!);
+    const daysRemaining = Math.ceil((nextPayment.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const dailyRate = subscription.amount / 365;
+    const refundAmount = Math.round(dailyRate * daysRemaining);
+
+    console.log(`Refund amount: ${refundAmount / 100}€ for ${daysRemaining} days`);
+    // Process refund via your refund logic
+  }
+
+  // End the subscription completely
+  await fam.subscriptions.end(subscriptionId);
+}
+```
+
+**3. User wants to change their payment card:**
+
+```typescript
+async function updatePaymentCard(subscriptionId: string, newCardId: string) {
+  // Update the card used for future payments
+  await fam.subscriptions.update(subscriptionId, {
+    cardId: newCardId,
+  });
+
+  // The next MIT will use the new card
+}
+```
+
+**4. Apply a promotional discount to existing subscription:**
+
+```typescript
+async function applyPromoDiscount(subscriptionId: string, discountPercent: number) {
+  const subscription = await fam.subscriptions.getSubscription(subscriptionId);
+
+  // Calculate discounted amount
+  const newAmount = Math.round(subscription.amount * (1 - discountPercent / 100));
+
+  await fam.subscriptions.update(subscriptionId, {
+    amount: newAmount,
+    metadata: {
+      ...subscription.metadata,
+      promoApplied: true,
+      originalAmount: subscription.amount,
+      discountPercent,
+    },
+  });
+}
+```
+
+**5. Simply change the subscription price (same plan):**
+
+```typescript
+// Use this when you just want to adjust the price
+// without changing the plan type or name
+async function changePrice(subscriptionId: string, newAmount: number) {
+  await fam.subscriptions.update(subscriptionId, {
+    amount: newAmount,  // New price in cents
+  });
+
+  // Example: Increase from 29€ to 39€
+  await fam.subscriptions.update(subscriptionId, { amount: 3900 });
+
+  // Example: Decrease from 29€ to 19€
+  await fam.subscriptions.update(subscriptionId, { amount: 1900 });
+}
+```
+
+**6. Migrate user from one plan to another (upgrade/downgrade):**
+
+```typescript
+// Use this when the user changes their plan entirely
+// (e.g., Basic → Premium, but same billing frequency)
+async function migratePlan(
+  subscriptionId: string,
+  newPlanName: string,
+  newAmount: number
+) {
+  await fam.subscriptions.update(subscriptionId, {
+    amount: newAmount,
+    subscriptionName: newPlanName,
+    subscriptionType: newPlanName.toLowerCase(),
+    metadata: {
+      migratedAt: new Date().toISOString(),
+      previousPlan: 'basic',
+    },
+  });
+}
+
+// Example: Upgrade from Basic (19€) to Premium (49€)
+await migratePlan(subscriptionId, 'Premium', 4900);
+```
+
+**7. Get all active subscriptions for a user in your app:**
+
+```typescript
+async function getUserSubscriptions(mangopayUserId: string, externalUserId: string) {
+  const { subscriptions } = await fam.subscriptions.listByMangopayUser(
+    mangopayUserId,
+    { activeOnly: true }
+  );
+
+  // Filter by your app's user ID if multiple users share a MangoPay account
+  const userSubs = subscriptions.filter(sub =>
+    sub.externalUserId === externalUserId
+  );
+
+  return userSubs;
+}
+```
+
+**8. Handle failed payment and retry:**
+
+```typescript
+// In your webhook handler for FAM_SUBSCRIPTION_PAYMENT_FAILED
+async function handlePaymentFailed(event: WebhookEvent) {
+  const { subscriptionId, resultCode, resultMessage } = event.Data;
+
+  if (resultCode === '101199') {
+    // Card expired - notify user to update card
+    await notifyUser('Your card has expired. Please update your payment method.');
+
+    // Create portal session for card update
+    const session = await fam.portal.createSession({
+      mangopayUserId: event.Data.mangopayUserId,
+      returnUrl: 'https://myapp.com/subscription-updated',
+    });
+
+    await sendEmail(user.email, 'Update your payment method', session.data.url);
+  }
+}
+```
+
+**9. Set subscription to end after current period:**
+
+```typescript
+async function cancelAtPeriodEnd(subscriptionId: string) {
+  const subscription = await fam.subscriptions.getSubscription(subscriptionId);
+
+  // Set end date to next payment date
+  await fam.subscriptions.update(subscriptionId, {
+    endDate: subscription.nextProcessingAt,
+    metadata: {
+      ...subscription.metadata,
+      cancelledAt: new Date().toISOString(),
+      cancelReason: 'user_requested',
+    },
+  });
+
+  // Subscription will automatically end after next payment date
+}
+```
+
+</details>
 
 ### Products
 
