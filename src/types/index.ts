@@ -200,3 +200,25 @@ export type {
   ValidatePortalSessionRequest,
   ValidatePortalSessionResponse,
 } from './portal.js'
+
+// Promotion types
+export type {
+  Coupon,
+  CouponDiscountType,
+  CouponDuration,
+  CouponListFilters,
+  CouponStats,
+  CreateCouponRequest,
+  CreatePromotionCodeRequest,
+  DiscountInfo,
+  GenerateCodesRequest,
+  GenerateCodesResponse,
+  GeneratedCode,
+  PromotionCode,
+  PromotionCodeListFilters,
+  PromotionCodeUsage,
+  UpdateCouponRequest,
+  UpdatePromotionCodeRequest,
+  ValidatePromotionCodeRequest,
+  ValidatePromotionCodeResponse,
+} from './promotions.js'
