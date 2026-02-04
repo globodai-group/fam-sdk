@@ -25,6 +25,8 @@ export interface Product {
   currency: string
   /** Whether the product is active */
   isActive: boolean
+  /** Environment (sandbox/production) - determined by API token */
+  environment: string | null
   /** Free-form metadata */
   metadata: Record<string, unknown> | null
   /** Creation timestamp */
@@ -41,6 +43,8 @@ export interface ProductListFilters extends PaginationParams {
   isActive?: boolean
   /** Filter by external ID */
   externalId?: string
+  /** Filter by environment (sandbox/production) */
+  environment?: string
 }
 
 /**

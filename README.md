@@ -477,6 +477,225 @@ await fam.subscriptions.disable(subscriptionId);
 await fam.subscriptions.cancel(subscriptionId);
 ```
 
+### Products
+
+Products are stable entities (like Stripe products) that maintain permanent IDs between FAM and client applications.
+
+<details open>
+<summary><strong>CRUD Operations</strong></summary>
+
+```typescript
+// Create a product
+const product = await fam.products.create({
+  name: 'Premium Plan',
+  monthlyPrice: 2900,  // in cents (29.00€)
+  yearlyPrice: 29000,  // in cents (290.00€)
+  currency: 'EUR',
+  isActive: true,
+  metadata: { tier: 'premium' },
+});
+
+// Get products
+const products = await fam.products.list({ isActive: true, environment: 'production' });
+const product = await fam.products.getById(productId);
+const product = await fam.products.getByExternalId('external-id');
+const product = await fam.products.getByName('Premium Plan');
+
+// Find (returns null instead of throwing)
+const product = await fam.products.findByExternalId('external-id');
+const product = await fam.products.findByName('Premium Plan');
+
+// Update a product
+await fam.products.update(productId, { monthlyPrice: 3900 });
+
+// Delete a product
+await fam.products.remove(productId);
+```
+
+</details>
+
+<details>
+<summary><strong>Upsert Operations</strong></summary>
+
+```typescript
+// Upsert by external ID (create or update)
+const result = await fam.products.upsertByExternalId('subscription_price_123', {
+  name: 'Premium Plan',
+  monthlyPrice: 2900,
+  yearlyPrice: 29000,
+});
+
+if (result._created) {
+  console.log('Product created:', result.id);
+} else {
+  console.log('Product updated:', result.id);
+}
+
+// Upsert by name (useful when external ID not available)
+const result = await fam.products.upsertByName('Premium Plan', {
+  monthlyPrice: 2900,
+  yearlyPrice: 29000,
+  externalId: 'optional-external-id',  // optional
+});
+
+// Activate/Deactivate
+await fam.products.activate(productId);
+await fam.products.deactivate(productId);
+```
+
+</details>
+
+> **Note**: The `environment` field (sandbox/production) is automatically determined by your API token. You cannot set it manually.
+
+### Bundles
+
+Bundles group multiple subscriptions into a single payment with optional discounts.
+
+<details open>
+<summary><strong>Bundle Operations</strong></summary>
+
+```typescript
+// List bundles
+const bundles = await fam.bundles.list({ isActive: true });
+const userBundles = await fam.bundles.listByMangopayUser(mangopayUserId);
+
+// Get bundle details (includes subscriptions)
+const bundle = await fam.bundles.getBundle(bundleId);
+const bundle = await fam.bundles.getByCode('mbc_ibo_global');
+
+// Validate if bundle can be created
+const validation = await fam.bundles.validate(
+  ['subscription_1', 'subscription_2'],
+  mangopayUserId
+);
+
+if (validation.valid) {
+  console.log('Bundle can be created');
+} else {
+  console.log('Issues:', validation.errors);
+}
+
+// Get price information with proration
+const price = await fam.bundles.getPrice(
+  ['subscription_1', 'subscription_2'],
+  { billingPeriod: 'monthly' }
+);
+console.log(`Bundle price: ${price.amount / 100}€`);
+console.log(`Proration credit: ${price.prorationCredit / 100}€`);
+```
+
+</details>
+
+<details>
+<summary><strong>Create Bundles</strong></summary>
+
+```typescript
+// Create bundle from existing subscriptions
+const { bundle, prorationCredit } = await fam.bundles.createFromSubscriptions({
+  name: 'Pack Complet',
+  subscriptionIds: ['sub_1', 'sub_2', 'sub_3'],
+  amount: 15000,  // 150€
+  billingPeriod: 'monthly',
+  metadata: { discount: '20%' },
+});
+
+// Create bundle with new subscriptions (for new users)
+const result = await fam.bundles.subscribe({
+  name: 'Pack MBC + IBO',
+  items: [
+    { productType: 'mbc', amount: 2900 },
+    { productType: 'ibo', amount: 1500 },
+  ],
+  amount: 3500,  // Discounted total
+  billingPeriod: 'monthly',
+  mangopayUserId: userId,
+  cardId: cardId,
+  walletId: walletId,
+  externalUserId: 'user_123',
+});
+```
+
+</details>
+
+<details>
+<summary><strong>Manage Bundles</strong></summary>
+
+```typescript
+// Update bundle
+await fam.bundles.update(bundleId, {
+  name: 'Pack Premium',
+  amount: 12000,
+  metadata: { tier: 'gold' },
+});
+
+// Add subscriptions to bundle
+await fam.bundles.addSubscriptions(bundleId, ['sub_4'], 18000);
+
+// Remove subscriptions from bundle
+await fam.bundles.removeSubscriptions(bundleId, ['sub_2'], 10000);
+
+// Activate/Deactivate
+await fam.bundles.activate(bundleId);
+await fam.bundles.deactivate(bundleId);
+
+// Dissolve bundle (re-enables individual subscriptions)
+const result = await fam.bundles.dissolve(bundleId);
+console.log('Re-enabled subscriptions:', result.reenabledSubscriptionIds);
+```
+
+</details>
+
+### Portal
+
+The Portal module provides methods to create sessions for the FAM Payment Portal, where users can manage their subscriptions, cards, and invoices.
+
+<details open>
+<summary><strong>Session Management</strong></summary>
+
+```typescript
+// Create a portal session
+const session = await fam.portal.createSession({
+  mangopayUserId: 'user_m_01HXK...',
+  returnUrl: 'https://myapp.com/dashboard',
+  expiresInMinutes: 60,  // optional, default 60
+});
+
+// Redirect user to portal
+console.log('Portal URL:', session.data.url);
+// window.location.href = session.data.url
+
+// Validate session (called by portal frontend)
+const result = await fam.portal.validateSession({
+  token: 'session-token-from-url',
+});
+
+if (result.valid) {
+  const { user, website } = result.data;
+  console.log(`Welcome ${user.firstName}`);
+  // Apply website theming
+}
+```
+
+</details>
+
+<details>
+<summary><strong>Portal User Operations</strong></summary>
+
+```typescript
+// Get current portal user (requires session token)
+const user = await fam.portal.getUser('session-token');
+console.log(`Hello ${user.data.firstName}`);
+
+// Refresh session (extends by 60 minutes)
+const refreshed = await fam.portal.refreshSession('session-token');
+console.log(`Session extended until ${refreshed.data.expiresAt}`);
+
+// Logout (invalidate session)
+await fam.portal.logout('session-token');
+```
+
+</details>
+
 ## Webhooks
 
 Verify and process webhook events securely:
@@ -586,6 +805,27 @@ import type {
 
   // Subscriptions
   RecurringSubscription,
+
+  // Products
+  Product,
+  CreateProductRequest,
+  UpdateProductRequest,
+  UpsertProductRequest,
+  UpsertProductResponse,
+  ProductListFilters,
+
+  // Bundles
+  Bundle,
+  BundleWithSubscriptions,
+  CreateBundleFromSubscriptionsRequest,
+  CreateBundleWithNewSubscriptionsRequest,
+  BundleValidationResult,
+  BundlePriceInfo,
+
+  // Portal
+  CreatePortalSessionRequest,
+  CreatePortalSessionResponse,
+  ValidatePortalSessionResponse,
 } from 'globodai-fam-sdk';
 ```
 
