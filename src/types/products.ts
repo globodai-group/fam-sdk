@@ -88,11 +88,13 @@ export interface UpdateProductRequest {
 }
 
 /**
- * Upsert product request (by external ID)
+ * Upsert product request (by external ID or name)
  */
 export interface UpsertProductRequest {
   /** Product name */
   name: string
+  /** External identifier (optional - for linking to client app entities) */
+  externalId?: string
   /** Monthly price in cents */
   monthlyPrice: number
   /** Yearly price in cents */
