@@ -198,3 +198,40 @@ export interface PortalLogoutResponse {
   success: boolean
   message: string
 }
+
+/**
+ * Billing info data structure (flat format for API transport)
+ */
+export interface BillingInfoData {
+  firstName: string | null
+  lastName: string | null
+  email: string
+  phone: string | null
+  addressLine1: string
+  addressLine2: string | null
+  city: string
+  postalCode: string
+  country: string
+  isCompany: boolean
+  companyName: string | null
+  vatNumber: string | null
+}
+
+/**
+ * Response from getting billing info
+ */
+export interface GetBillingInfoResponse {
+  success: boolean
+  data: {
+    saved: boolean
+    billingInfo?: BillingInfoData
+  }
+}
+
+/**
+ * Response from saving billing info
+ */
+export interface SaveBillingInfoResponse {
+  success: boolean
+  data: BillingInfoData
+}
