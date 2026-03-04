@@ -20,11 +20,14 @@
 import { BaseModule } from './base.js'
 import type { HttpClient } from '../client.js'
 import type {
+  BillingInfoData,
   CreatePortalSessionRequest,
   CreatePortalSessionResponse,
+  GetBillingInfoResponse,
   GetPortalUserResponse,
   PortalLogoutResponse,
   RefreshPortalSessionResponse,
+  SaveBillingInfoResponse,
   ValidatePortalSessionRequest,
   ValidatePortalSessionResponse,
 } from '../types/portal.js'
@@ -155,6 +158,69 @@ export class PortalModule extends BaseModule {
    */
   async logout(sessionToken: string): Promise<PortalLogoutResponse> {
     return this.client.post<PortalLogoutResponse>(this.path('logout'), undefined, {
+      headers: {
+        'X-Portal-Session': sessionToken,
+      },
+    })
+  }
+
+  /**
+   * Get saved billing info for the current user + website
+   *
+   * Requires a valid session token in the X-Portal-Session header.
+   *
+   * @param sessionToken - The portal session token
+   * @returns Billing info if saved, or { saved: false }
+   *
+   * @example
+   * ```typescript
+   * const result = await client.portal.getBillingInfo('session-token')
+   * if (result.data.saved && result.data.billingInfo) {
+   *   console.log(result.data.billingInfo.email)
+   * }
+   * ```
+   */
+  async getBillingInfo(sessionToken: string): Promise<GetBillingInfoResponse> {
+    return this.client.get<GetBillingInfoResponse>(this.path('billing-info'), {
+      headers: {
+        'X-Portal-Session': sessionToken,
+      },
+    })
+  }
+
+  /**
+   * Save or update billing info for the current user + website
+   *
+   * Requires a valid session token in the X-Portal-Session header.
+   * Uses upsert: creates if not exists, updates if exists.
+   *
+   * @param sessionToken - The portal session token
+   * @param data - Billing info data to save
+   * @returns The saved billing info
+   *
+   * @example
+   * ```typescript
+   * const result = await client.portal.saveBillingInfo('session-token', {
+   *   firstName: 'John',
+   *   lastName: 'Doe',
+   *   email: 'john@example.com',
+   *   addressLine1: '123 Main St',
+   *   city: 'Paris',
+   *   postalCode: '75001',
+   *   country: 'FR',
+   *   isCompany: false,
+   *   phone: null,
+   *   addressLine2: null,
+   *   companyName: null,
+   *   vatNumber: null,
+   * })
+   * ```
+   */
+  async saveBillingInfo(
+    sessionToken: string,
+    data: BillingInfoData
+  ): Promise<SaveBillingInfoResponse> {
+    return this.client.put<SaveBillingInfoResponse>(this.path('billing-info'), data, {
       headers: {
         'X-Portal-Session': sessionToken,
       },
