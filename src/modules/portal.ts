@@ -25,6 +25,7 @@ import type {
   CreatePortalSessionResponse,
   GetBillingInfoResponse,
   GetPortalUserResponse,
+  ListPortalPaymentsResponse,
   PortalLogoutResponse,
   RefreshPortalSessionResponse,
   SaveBillingInfoResponse,
@@ -221,6 +222,40 @@ export class PortalModule extends BaseModule {
     data: BillingInfoData
   ): Promise<SaveBillingInfoResponse> {
     return this.client.put<SaveBillingInfoResponse>(this.path('billing-info'), data, {
+      headers: {
+        'X-Portal-Session': sessionToken,
+      },
+    })
+  }
+
+  /**
+   * List all payments for the current portal user
+   *
+   * Returns subscription payments and direct MangoPay transactions.
+   * Supports pagination and status filtering.
+   *
+   * @param sessionToken - The portal session token
+   * @param params - Optional pagination and filter params
+   * @returns Paginated list of payments
+   */
+  async listPayments(
+    sessionToken: string,
+    params?: { page?: number; limit?: number; status?: string }
+  ): Promise<ListPortalPaymentsResponse> {
+    const query = new URLSearchParams()
+    if (params?.page !== undefined && params.page > 0) {
+      query.set('page', String(params.page))
+    }
+    if (params?.limit !== undefined && params.limit > 0) {
+      query.set('limit', String(params.limit))
+    }
+    if (params?.status !== undefined && params.status !== '') {
+      query.set('status', params.status)
+    }
+    const queryString = query.toString()
+    const path = queryString ? `payments?${queryString}` : 'payments'
+
+    return this.client.get<ListPortalPaymentsResponse>(this.path(path), {
       headers: {
         'X-Portal-Session': sessionToken,
       },
