@@ -189,14 +189,17 @@ export type {
 
 // Portal types
 export type {
+  BillingInfoData,
   CheckoutConfig,
   CreatePortalSessionRequest,
   CreatePortalSessionResponse,
+  GetBillingInfoResponse,
   GetPortalUserResponse,
   PortalLogoutResponse,
   PortalUser,
   PortalWebsiteConfig,
   RefreshPortalSessionResponse,
+  SaveBillingInfoResponse,
   ValidatePortalSessionRequest,
   ValidatePortalSessionResponse,
 } from './portal.js'
