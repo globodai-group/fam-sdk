@@ -235,3 +235,33 @@ export interface SaveBillingInfoResponse {
   success: boolean
   data: BillingInfoData
 }
+
+/**
+ * A single payment item returned by the portal payments list
+ */
+export interface PortalPaymentItem {
+  id: string
+  payinId: string
+  type: 'CIT' | 'MIT' | 'DIRECT'
+  status: string
+  amount: number
+  currency: string
+  productType: string | null
+  productLabel: string | null
+  resultCode: string | null
+  resultMessage: string | null
+  createdAt: string
+}
+
+/**
+ * Response from listing portal payments
+ */
+export interface ListPortalPaymentsResponse {
+  success: boolean
+  data: {
+    payments: PortalPaymentItem[]
+    total: number
+    page: number
+    limit: number
+  }
+}
