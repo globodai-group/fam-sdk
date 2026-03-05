@@ -95,7 +95,7 @@ export class Fam {
   }
 
   /**
-   * Set the authentication token
+   * Set the authentication token (secret key, full access)
    */
   setToken(token: string): void {
     this.client.setToken(token)
@@ -106,6 +106,20 @@ export class Fam {
    */
   clearToken(): void {
     this.client.clearToken()
+  }
+
+  /**
+   * Set the public key (read-only access, safe for frontend/mobile)
+   */
+  setPublicKey(publicKey: string): void {
+    this.client.setPublicKey(publicKey)
+  }
+
+  /**
+   * Clear the public key
+   */
+  clearPublicKey(): void {
+    this.client.clearPublicKey()
   }
 
   /**
