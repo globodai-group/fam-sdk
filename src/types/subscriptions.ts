@@ -67,8 +67,18 @@ export interface SubscriptionPayment {
   currency: Currency
   resultCode?: string
   resultMessage?: string
+  isRefunded?: boolean
+  refundedAt?: string
   processedAt?: string
   createdAt: string
+}
+
+/**
+ * Filters for listing subscription payments
+ */
+export interface SubscriptionPaymentFilters extends PaginationParams {
+  status?: SubscriptionPaymentStatus
+  type?: 'CIT' | 'MIT'
 }
 
 /**
