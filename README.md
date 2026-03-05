@@ -36,6 +36,7 @@
 - **Automatic Retries** — Built-in retry logic with exponential backoff
 - **Comprehensive Errors** — Typed error classes for precise error handling
 - **Webhook Verification** — Secure signature verification out of the box
+- **Public Key Support** — Read-only access for frontend and mobile apps
 
 ## Requirements
 
@@ -63,13 +64,15 @@ pnpm add globodai-fam-sdk
 
 ## Quick Start
 
+### Backend (full access with secret token)
+
 ```typescript
 import { Fam } from 'globodai-fam-sdk';
 
-// Initialize the client
+// Initialize the client with secret token (full access)
 const fam = new Fam({
   baseUrl: 'https://api.fam.com',
-  token: 'your-auth-token',
+  token: 'your-secret-token',
 });
 
 // Create a user
@@ -92,6 +95,28 @@ const wallet = await fam.wallets.create({
 console.log(`Wallet created: ${wallet.Id}`);
 ```
 
+### Frontend / Mobile (read-only access with public key)
+
+Use the **public key** for frontend or mobile applications. It restricts access to **GET requests only**, making it safe to expose in client-side code.
+
+```typescript
+import { Fam } from 'globodai-fam-sdk';
+
+// Initialize with public key (read-only)
+const fam = new Fam({
+  baseUrl: 'https://api.fam.com',
+  publicKey: 'your-public-key-token',
+});
+
+// Read operations work
+const products = await fam.products.list();
+const bundles = await fam.bundles.list();
+const product = await fam.products.getById('product-id');
+
+// Write operations are blocked (403 Forbidden)
+// await fam.payins.create({ ... });  // Error: Public key only allows read access
+```
+
 ## Configuration
 
 ```typescript
@@ -100,12 +125,69 @@ import type { FamOptions } from 'globodai-fam-sdk';
 
 const options: FamOptions = {
   baseUrl: 'https://api.fam.com',
-  token: 'your-auth-token',
+  token: 'your-secret-token',   // Secret token (full access) — OR —
+  publicKey: 'your-public-key', // Public key (read-only, safe for client-side)
   timeout: 30000, // Request timeout in ms (default: 30000)
   retries: 3,     // Retry attempts on network errors (default: 3)
 };
 
 const fam = new Fam(options);
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `baseUrl` | `string` | **required** | Base URL of the FAM API |
+| `token` | `string` | - | Secret token for full access (backend only) |
+| `publicKey` | `string` | - | Public key for read-only access (safe for frontend/mobile) |
+| `timeout` | `number` | `30000` | Request timeout in milliseconds |
+| `retries` | `number` | `3` | Number of retries on network/timeout/rate-limit errors |
+| `headers` | `Record<string, string>` | `{}` | Custom headers for all requests |
+
+> **Note:** Provide either `token` or `publicKey`. If both are provided, `token` takes priority.
+
+## Authentication
+
+The SDK supports two authentication modes:
+
+### Secret Token (`token`)
+- Full read/write access to all API endpoints
+- **Never expose in client-side code**
+- Used for backend/server-side applications
+
+### Public Key (`publicKey`)
+- Read-only access (GET requests only)
+- Safe to use in frontend, mobile, and client-side applications
+- Write operations (POST, PUT, PATCH, DELETE) return a `403 Forbidden` error
+
+**Available with public key:**
+
+| Module | Methods | Description |
+|--------|---------|-------------|
+| `fam.products` | `list()`, `getById()`, `getByExternalId()`, `getByName()` | Product catalog |
+| `fam.bundles` | `list()`, `getBundle()`, `getByCode()` | Bundle catalog |
+| `fam.subscriptions` | `list()`, `getSubscription()`, `listByMangopayUser()` | Subscription details |
+| `fam.users` | `getUser()`, `getNaturalUser()`, `getLegalUser()`, `getWallets()`, `getCards()` | User details (by ID only) |
+
+**Blocked with public key:**
+
+| Action | Error |
+|--------|-------|
+| Any write operation (POST, PUT, DELETE) | `403` — `public_key_read_only` |
+| `fam.users.list()` (list all users) | `403` — `public_key_restricted` |
+
+You can switch authentication at runtime:
+
+```typescript
+// Switch to a different secret token
+fam.setToken('new-secret-token');
+
+// Switch to public key mode
+fam.clearToken();
+fam.setPublicKey('your-public-key');
+
+// Clear all authentication
+fam.clearToken();
+fam.clearPublicKey();
 ```
 
 ## API Reference
@@ -1728,6 +1810,7 @@ The SDK provides typed error classes for precise error handling:
 import {
   ApiError,
   AuthenticationError,
+  AuthorizationError,
   ValidationError,
   NotFoundError,
   RateLimitError,
@@ -1743,6 +1826,10 @@ try {
   } else if (error instanceof AuthenticationError) {
     // Invalid or expired token (401)
     console.error('Please re-authenticate');
+  } else if (error instanceof AuthorizationError) {
+    // Insufficient permissions (403)
+    // e.g. public key used for a write operation
+    console.error('Access denied:', error.message);
   } else if (error instanceof ValidationError) {
     // Invalid request data (400)
     console.error('Validation errors:', error.errors);
