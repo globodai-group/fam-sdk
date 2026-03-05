@@ -16,8 +16,10 @@ import { buildUrl, retry } from './utils/index.js'
 export interface FamOptions {
   /** Base URL of the API */
   baseUrl: string
-  /** Authentication token */
+  /** Secret authentication token (full access) */
   token?: string
+  /** Public key for read-only access (safe for frontend/mobile) */
+  publicKey?: string
   /** Request timeout in milliseconds */
   timeout?: number
   /** Number of retries on network errors */
@@ -68,10 +70,12 @@ export class HttpClient {
   private readonly retries: number
   private readonly defaultHeaders: Record<string, string>
   private token: string | undefined
+  private publicKey: string | undefined
 
   constructor(options: FamOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, '')
     this.token = options.token
+    this.publicKey = options.publicKey
     this.timeout = options.timeout ?? 30000
     this.retries = options.retries ?? 3
     this.defaultHeaders = {
@@ -93,6 +97,20 @@ export class HttpClient {
    */
   clearToken(): void {
     this.token = undefined
+  }
+
+  /**
+   * Set the public key for read-only access
+   */
+  setPublicKey(publicKey: string): void {
+    this.publicKey = publicKey
+  }
+
+  /**
+   * Clear the public key
+   */
+  clearPublicKey(): void {
+    this.publicKey = undefined
   }
 
   /**
@@ -223,8 +241,9 @@ export class HttpClient {
   private buildHeaders(customHeaders?: Record<string, string>): Record<string, string> {
     const headers: Record<string, string> = { ...this.defaultHeaders }
 
-    if (this.token !== undefined) {
-      headers['Authorization'] = `Bearer ${this.token}`
+    const authToken = this.token ?? this.publicKey
+    if (authToken !== undefined) {
+      headers['Authorization'] = `Bearer ${authToken}`
     }
 
     if (customHeaders !== undefined) {
