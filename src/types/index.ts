@@ -140,6 +140,7 @@ export type {
   SubscriptionFrequency,
   SubscriptionListFilters,
   SubscriptionPayment,
+  SubscriptionPaymentFilters,
   SubscriptionPaymentStatus,
   SubscriptionStatus,
   SubscriptionWithPayments,

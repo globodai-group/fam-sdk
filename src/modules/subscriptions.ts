@@ -13,6 +13,8 @@ import type {
   RecurringSubscription,
   RegisterSubscriptionRequest,
   SubscriptionListFilters,
+  SubscriptionPayment,
+  SubscriptionPaymentFilters,
   SubscriptionWithPayments,
   SyncSubscriptionResponse,
   UpdateSubscriptionRequest,
@@ -47,6 +49,19 @@ export class SubscriptionsModule extends BaseModule {
     return this.client.get<PaginatedResponse<RecurringSubscription>>(this.path(''), {
       params: filters as Record<string, string | number | boolean | undefined | null>,
     })
+  }
+
+  /**
+   * List payments for a subscription (paginated, max 50 per page)
+   */
+  async listPayments(
+    subscriptionId: string,
+    filters?: SubscriptionPaymentFilters
+  ): Promise<PaginatedResponse<SubscriptionPayment>> {
+    return this.client.get<PaginatedResponse<SubscriptionPayment>>(
+      this.path(`${subscriptionId}/payments`),
+      { params: filters as Record<string, string | number | boolean | undefined | null> }
+    )
   }
 
   /**
