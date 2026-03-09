@@ -24,6 +24,7 @@ import type {
   CreatePortalSessionRequest,
   CreatePortalSessionResponse,
   GetBillingInfoResponse,
+  GetPortalSessionStatusResponse,
   GetPortalUserResponse,
   ListPortalPaymentsResponse,
   PortalLogoutResponse,
@@ -68,6 +69,29 @@ export class PortalModule extends BaseModule {
    */
   async createSession(data: CreatePortalSessionRequest): Promise<CreatePortalSessionResponse> {
     return this.post<CreatePortalSessionResponse>('sessions', data)
+  }
+
+  /**
+   * Get portal session status
+   *
+   * Check the current status of a portal session, including
+   * whether the payment has succeeded, failed, or is still pending.
+   * Requires website authentication (Bearer token).
+   *
+   * @param sessionId - The portal session ID
+   * @returns Session status with payment details
+   *
+   * @example
+   * ```typescript
+   * const status = await client.portal.getSessionStatus('session-id')
+   *
+   * if (status.data.status === 'succeeded') {
+   *   console.log(`Payment succeeded, payinId: ${status.data.lastPayinId}`)
+   * }
+   * ```
+   */
+  async getSessionStatus(sessionId: string): Promise<GetPortalSessionStatusResponse> {
+    return this.get<GetPortalSessionStatusResponse>(`sessions/${sessionId}`)
   }
 
   /**
