@@ -237,6 +237,29 @@ export interface SaveBillingInfoResponse {
 }
 
 /**
+ * Response from getting portal session status
+ */
+export interface GetPortalSessionStatusResponse {
+  success: boolean
+  data: {
+    /** The session ID */
+    sessionId: string
+    /** Session status: pending, succeeded, failed, or expired */
+    status: 'pending' | 'succeeded' | 'failed' | 'expired'
+    /** MangoPay PayIn ID (if payment was attempted) */
+    lastPayinId: string | null
+    /** Whether the checkout webhook was already sent */
+    webhookSent: boolean
+    /** Checkout configuration (if provided when creating session) */
+    checkoutConfig: CheckoutConfig | null
+    /** Session expiration datetime (ISO string) */
+    expiresAt: string
+    /** Session creation datetime (ISO string) */
+    createdAt: string
+  }
+}
+
+/**
  * A single payment item returned by the portal payments list
  */
 export interface PortalPaymentItem {
