@@ -195,6 +195,7 @@ export type {
   CreatePortalSessionRequest,
   CreatePortalSessionResponse,
   GetBillingInfoResponse,
+  GetPortalSessionStatusResponse,
   GetPortalUserResponse,
   ListPortalPaymentsResponse,
   PortalLogoutResponse,
