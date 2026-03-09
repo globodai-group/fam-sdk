@@ -604,6 +604,43 @@ const { subscriptions } = await fam.subscriptions.listByMangopayUser(
 </details>
 
 <details>
+<summary><strong>List Payments (Paginated)</strong></summary>
+
+```typescript
+// List all payments for a subscription (paginated, max 50 per page)
+const { data: payments, meta } = await fam.subscriptions.listPayments(subscriptionId, {
+  per_page: 50,
+  page: 1,
+  status: 'SUCCEEDED',  // optional: 'PENDING' | 'SUCCEEDED' | 'FAILED'
+  type: 'MIT',           // optional: 'CIT' | 'MIT'
+});
+
+console.log(`Total payments: ${meta.total}`);
+console.log(`Pages: ${meta.last_page}`);
+
+// Calculate total revenue for a subscription
+const allPayments: SubscriptionPayment[] = [];
+let page = 1;
+let lastPage = 1;
+
+do {
+  const result = await fam.subscriptions.listPayments(subscriptionId, {
+    per_page: 50,
+    page,
+    status: 'SUCCEEDED',
+  });
+  allPayments.push(...result.data);
+  lastPage = result.meta.last_page;
+  page++;
+} while (page <= lastPage);
+
+const totalRevenue = allPayments.reduce((sum, p) => sum + p.amount, 0);
+console.log(`Total revenue: ${totalRevenue / 100}€`);
+```
+
+</details>
+
+<details>
 <summary><strong>Update Subscriptions</strong></summary>
 
 ```typescript
@@ -1731,6 +1768,41 @@ await fam.portal.logout('session-token');
 </details>
 
 <details>
+<summary><strong>Check Session Status (Reconciliation)</strong></summary>
+
+Check the payment status of a portal session. Useful for reconciliation when webhooks are not available or as a fallback to verify payment completion.
+
+```typescript
+// Check if a portal checkout session has been paid
+const status = await fam.portal.getSessionStatus('session-id');
+
+console.log(`Status: ${status.data.status}`);
+// 'pending' | 'succeeded' | 'failed' | 'expired'
+
+if (status.data.status === 'succeeded') {
+  console.log(`Payment succeeded, payinId: ${status.data.lastPayinId}`);
+}
+
+if (status.data.status === 'expired') {
+  console.log('Session expired without payment');
+}
+
+// Poll for payment completion (e.g., after 3DS redirect)
+const pollStatus = async (sessionId: string, maxAttempts = 10) => {
+  for (let i = 0; i < maxAttempts; i++) {
+    const result = await fam.portal.getSessionStatus(sessionId);
+    if (result.data.status !== 'pending') {
+      return result.data;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+  }
+  throw new Error('Payment verification timed out');
+};
+```
+
+</details>
+
+<details>
 <summary><strong>CheckoutConfig Reference</strong></summary>
 
 | Field | Type | Required | Description |
@@ -1901,6 +1973,7 @@ import type {
   ValidatePortalSessionRequest,
   ValidatePortalSessionResponse,
   GetPortalUserResponse,
+  GetPortalSessionStatusResponse,
   RefreshPortalSessionResponse,
   PortalLogoutResponse,
 
