@@ -237,6 +237,19 @@ export interface SaveBillingInfoResponse {
 }
 
 /**
+ * Last payment error stored in session (deferred PORTAL_CHECKOUT_FAILED flow)
+ * Present when a payment failed and the user has not yet abandoned checkout
+ */
+export interface PortalSessionPaymentError {
+  /** MangoPay result code (e.g. '101109') */
+  resultCode: string | null
+  /** Human-readable error message */
+  resultMessage: string | null
+  /** MangoPay PayIn ID that failed */
+  payinId: string
+}
+
+/**
  * Response from getting portal session status
  */
 export interface GetPortalSessionStatusResponse {
@@ -244,12 +257,24 @@ export interface GetPortalSessionStatusResponse {
   data: {
     /** The session ID */
     sessionId: string
-    /** Session status: pending, succeeded, failed, or expired */
+    /**
+     * Session status:
+     * - `pending`: no completed payment yet (user may be retrying)
+     * - `succeeded`: payment succeeded, PORTAL_CHECKOUT_SUCCEEDED webhook sent
+     * - `failed`: user abandoned checkout after failure, PORTAL_CHECKOUT_FAILED webhook sent
+     * - `expired`: session expired without any payment
+     */
     status: 'pending' | 'succeeded' | 'failed' | 'expired'
     /** MangoPay PayIn ID (if payment was attempted) */
     lastPayinId: string | null
-    /** Whether the checkout webhook was already sent */
+    /** Whether the final checkout webhook was already sent */
     webhookSent: boolean
+    /**
+     * Last payment error (if any).
+     * Present when a payment failed. Status stays `pending` while the user can retry,
+     * and becomes `failed` once the user abandons checkout (webhook sent).
+     */
+    lastPaymentError: PortalSessionPaymentError | null
     /** Checkout configuration (if provided when creating session) */
     checkoutConfig: CheckoutConfig | null
     /** Session expiration datetime (ISO string) */
