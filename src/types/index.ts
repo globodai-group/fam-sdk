@@ -200,6 +200,7 @@ export type {
   ListPortalPaymentsResponse,
   PortalLogoutResponse,
   PortalPaymentItem,
+  PortalSessionPaymentError,
   PortalUser,
   PortalWebsiteConfig,
   RefreshPortalSessionResponse,
