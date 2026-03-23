@@ -101,6 +101,12 @@ export interface PortalUser {
   lastName: string | null
   /** Person type: NATURAL or LEGAL */
   personType: 'NATURAL' | 'LEGAL' | null
+  /** User category: PAYER (subscriber) or OWNER (receives payouts, subject to KYC) */
+  userCategory: 'PAYER' | 'OWNER' | null
+  /** Legal person type (only for LEGAL users) */
+  legalPersonType: 'BUSINESS' | 'SOLETRADER' | 'ORGANIZATION' | 'PARTNERSHIP' | null
+  /** KYC verification level */
+  kycLevel: 'LIGHT' | 'REGULAR' | null
 }
 
 /**
