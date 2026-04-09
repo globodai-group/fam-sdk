@@ -24,42 +24,42 @@ import type { PaginatedResponse, PaginationParams } from '../types/common.js'
  */
 export class BankAccountsModule extends BaseModule {
   constructor(client: HttpClient, userId: string) {
-    super(client, `/api/v1/mangopay/users/${userId}/bankaccounts`)
+    super(client, `/api/v1/mangopay/users/${userId}/bankAccounts`)
   }
 
   /**
    * Create an IBAN bank account
    */
   async createIban(data: CreateIbanBankAccountRequest): Promise<IbanBankAccount> {
-    return this.post<IbanBankAccount>('iban', data)
+    return this.post<IbanBankAccount>('', { ...data, Type: 'IBAN' })
   }
 
   /**
    * Create a GB bank account
    */
   async createGb(data: CreateGbBankAccountRequest): Promise<GbBankAccount> {
-    return this.post<GbBankAccount>('gb', data)
+    return this.post<GbBankAccount>('', { ...data, Type: 'GB' })
   }
 
   /**
    * Create a US bank account
    */
   async createUs(data: CreateUsBankAccountRequest): Promise<UsBankAccount> {
-    return this.post<UsBankAccount>('us', data)
+    return this.post<UsBankAccount>('', { ...data, Type: 'US' })
   }
 
   /**
    * Create a CA bank account
    */
   async createCa(data: CreateCaBankAccountRequest): Promise<CaBankAccount> {
-    return this.post<CaBankAccount>('ca', data)
+    return this.post<CaBankAccount>('', { ...data, Type: 'CA' })
   }
 
   /**
    * Create an Other bank account
    */
   async createOther(data: CreateOtherBankAccountRequest): Promise<OtherBankAccount> {
-    return this.post<OtherBankAccount>('other', data)
+    return this.post<OtherBankAccount>('', { ...data, Type: 'OTHER' })
   }
 
   /**
@@ -82,6 +82,6 @@ export class BankAccountsModule extends BaseModule {
    * Deactivate a bank account
    */
   async deactivate(accountId: string): Promise<BankAccount> {
-    return this.put<BankAccount>(accountId, { Active: false })
+    return this.put<BankAccount>(`${accountId}/desactivate`, { Active: false })
   }
 }
