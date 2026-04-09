@@ -118,7 +118,7 @@ export class UsersModule extends BaseModule {
     userId: string,
     params?: PaginationParams
   ): Promise<PaginatedResponse<BankAccount>> {
-    return this.client.get<PaginatedResponse<BankAccount>>(this.path([userId, 'bankaccounts']), {
+    return this.client.get<PaginatedResponse<BankAccount>>(this.path([userId, 'bankAccounts']), {
       params: params as Record<string, string | number | boolean | undefined | null>,
     })
   }
