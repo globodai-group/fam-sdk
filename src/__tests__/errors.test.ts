@@ -29,10 +29,34 @@ describe('ApiError', () => {
     expect(error.name).toBe('ApiError')
   })
 
-  it('should create an api error with code and details', () => {
-    const error = new ApiError('api error', 400, 'INVALID_REQUEST', { field: 'email' })
+  it('should create an api error with code and allowlisted details', () => {
+    const error = new ApiError('api error', 400, 'INVALID_REQUEST', {
+      message: 'Bad input',
+      code: 'X1',
+      errors: { field: ['required'] },
+    })
     expect(error.code).toBe('INVALID_REQUEST')
-    expect(error.details).toEqual({ field: 'email' })
+    expect(error.details).toEqual({
+      message: 'Bad input',
+      code: 'X1',
+      errors: { field: ['required'] },
+    })
+  })
+
+  it('should drop details fields that are not in the allowlist', () => {
+    const error = new ApiError('api error', 400, 'INVALID_REQUEST', {
+      message: 'Bad input',
+      internalToken: 'sk_live_should_never_be_logged',
+      mangopayRawResponse: { Id: 'priv', AccessToken: 'leaked' },
+    })
+    expect(error.details).toEqual({ message: 'Bad input' })
+  })
+
+  it('should drop details entirely when no allowlisted field is present', () => {
+    const error = new ApiError('api error', 400, 'INVALID_REQUEST', {
+      internalToken: 'sk_live_should_never_be_logged',
+    })
+    expect(error.details).toBeUndefined()
   })
 
   it('should handle undefined code and details', () => {

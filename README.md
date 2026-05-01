@@ -62,6 +62,37 @@ pnpm add globodai-fam-sdk
 
 </details>
 
+## Provisioning & Environment Variables
+
+The SDK is provisioned per "site ID" by the FAM admin. Every team gets four
+values; **use these env var names verbatim** so onboarding, log redaction,
+and secret rotation work the same way across every consumer (Scaneon, Exaku,
+Rentimmo, Momentum, Freelance Ennemi, FAM Portal, etc.).
+
+| Env var | Provided by | Used in | Sensitivity |
+| --- | --- | --- | --- |
+| `FAM_API_BASE_URL` | FAM team (one URL per env: sandbox / staging / prod) | `Fam({ baseUrl })` | Public |
+| `FAM_API_SECRET` | FAM admin at site ID creation | `Fam({ token })` | **Secret — backend only** |
+| `FAM_API_PUBLIC_KEY` | FAM admin at site ID creation | `Fam({ publicKey })` | Safe to embed in frontend / mobile bundles (GET-only) |
+| `FAM_WEBHOOK_SIGNING_SECRET` | FAM admin at site ID creation | `Webhooks({ signingSecret })` | **Secret — HMAC for inbound webhooks** |
+
+> **Per-environment secrets.** Ask the FAM admin for one site ID per
+> environment. The same `FAM_*` variable holds a different value in dev,
+> staging, and production.
+
+Copy this `.env.example` into your project and fill it from the values you
+received:
+
+```dotenv
+# FAM SDK — credentials provisioned by the FAM admin at site ID creation.
+# Never commit real values. Use a secret manager in CI/CD.
+
+FAM_API_BASE_URL=https://api.sandbox.fam.com
+FAM_API_SECRET=fam_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+FAM_API_PUBLIC_KEY=fam_pk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+FAM_WEBHOOK_SIGNING_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
 ## Quick Start
 
 ### Backend (full access with secret token)
@@ -69,10 +100,11 @@ pnpm add globodai-fam-sdk
 ```typescript
 import { Fam } from 'globodai-fam-sdk';
 
-// Initialize the client with secret token (full access)
+// Initialize the client with the secret token (full access).
+// Read all credentials from env vars — never hard-code them.
 const fam = new Fam({
-  baseUrl: 'https://api.fam.com',
-  token: 'your-secret-token',
+  baseUrl: process.env.FAM_API_BASE_URL!,
+  token: process.env.FAM_API_SECRET!,
 });
 
 // Create a user
@@ -102,10 +134,10 @@ Use the **public key** for frontend or mobile applications. It restricts access 
 ```typescript
 import { Fam } from 'globodai-fam-sdk';
 
-// Initialize with public key (read-only)
+// Initialize with the public key (read-only — safe to ship to the client).
 const fam = new Fam({
-  baseUrl: 'https://api.fam.com',
-  publicKey: 'your-public-key-token',
+  baseUrl: process.env.FAM_API_BASE_URL!,
+  publicKey: process.env.FAM_API_PUBLIC_KEY!,
 });
 
 // Read operations work
@@ -1835,21 +1867,24 @@ const pollStatus = async (sessionId: string, maxAttempts = 10) => {
 
 ## Webhooks
 
-Verify and process webhook events securely:
+Verify and process webhook events securely. **The signing secret is required** — instantiating `Webhooks` without it throws at construction.
 
 ```typescript
 import { Webhooks } from 'globodai-fam-sdk/webhooks';
 
 const webhooks = new Webhooks({
-  signingSecret: process.env.WEBHOOK_SECRET,
+  signingSecret: process.env.FAM_WEBHOOK_SIGNING_SECRET!,
 });
 
-// Express.js example
-app.post('/webhooks', express.raw({ type: 'application/json' }), (req, res) => {
-  const signature = req.headers['x-webhook-signature'] as string;
+// Express.js example.
+// Use express.raw() — express.json() re-serializes the body and breaks the HMAC.
+app.post('/webhooks/fam', express.raw({ type: 'application/json' }), (req, res) => {
+  const signature = req.headers['x-webhook-signature'] as string | undefined;
 
   try {
-    const event = webhooks.constructEvent(req.body, signature);
+    // constructEvent verifies the signature *before* parsing — never trust the
+    // payload without it. A missing/invalid signature throws WebhookSignatureError.
+    const event = webhooks.constructEvent(req.body.toString('utf8'), signature);
 
     switch (event.EventType) {
       case 'PAYIN_NORMAL_SUCCEEDED':
@@ -1868,7 +1903,7 @@ app.post('/webhooks', express.raw({ type: 'application/json' }), (req, res) => {
 
     res.status(200).json({ received: true });
   } catch (error) {
-    console.error('Webhook error:', error);
+    // Do not log the raw body or the signature here — both are sensitive.
     res.status(400).json({ error: 'Invalid signature' });
   }
 });
@@ -2032,6 +2067,20 @@ We welcome contributions! Please see our contributing guidelines:
 7. Open a Pull Request
 
 ## Security
+
+### Best practices for consumers
+
+- **Never commit secrets.** Use `.env` (gitignored) or a secret manager (Vault, AWS Secrets Manager, Doppler). Refer to the `.env.example` block in *Provisioning & Environment Variables*.
+- **Separate secrets per environment.** `FAM_API_SECRET` and `FAM_WEBHOOK_SIGNING_SECRET` MUST be different across dev, staging, and production. Ask the FAM admin for one site ID per environment.
+- **Backend-only for `FAM_API_SECRET`.** Never bundle it into a frontend, mobile app, or public repo. For client-side use, only ship `FAM_API_PUBLIC_KEY` (read-only, GET-only).
+- **Always verify webhook signatures.** Call `webhooks.constructEvent(rawBody, signature)` *before* any business logic. A missing or wrong signature must return HTTP 400 — never trust the payload otherwise.
+- **Use the raw request body for HMAC.** `express.raw({ type: 'application/json' })` (not `express.json()`). JSON re-serialization breaks the signature.
+- **HTTPS only outside of localhost.** The SDK refuses `http://` baseUrls in production and outside of localhost in any environment.
+- **Rotate credentials on suspicion of leak.** Request a new site ID from the FAM admin and revoke the old one immediately.
+- **Do not log secrets, raw bodies, or full webhook payloads.** Redact `Authorization` headers and `signingSecret` in your logger configuration.
+- **Pin the SDK version** in `package.json` and run `pnpm audit` / `npm audit` regularly.
+
+### Reporting a vulnerability
 
 If you discover a security vulnerability, please send an email to security@globodai.com instead of using the issue tracker.
 

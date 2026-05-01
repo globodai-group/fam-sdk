@@ -52,6 +52,45 @@ describe('HttpClient', () => {
       const c = new HttpClient({ baseUrl: 'https://api.example.com' })
       expect(c).toBeInstanceOf(HttpClient)
     })
+
+    it('should reject http baseUrl on a non-localhost host', () => {
+      expect(() => new HttpClient({ baseUrl: 'http://api.example.com' })).toThrow(
+        /Insecure baseUrl/
+      )
+    })
+
+    it('should accept http baseUrl on localhost outside of production', () => {
+      const previousEnv = process.env['NODE_ENV']
+      process.env['NODE_ENV'] = 'development'
+      try {
+        const c = new HttpClient({ baseUrl: 'http://localhost:3000' })
+        expect(c).toBeInstanceOf(HttpClient)
+      } finally {
+        process.env['NODE_ENV'] = previousEnv
+      }
+    })
+
+    it('should reject http baseUrl on localhost in production', () => {
+      const previousEnv = process.env['NODE_ENV']
+      process.env['NODE_ENV'] = 'production'
+      try {
+        expect(() => new HttpClient({ baseUrl: 'http://localhost:3000' })).toThrow(
+          /Insecure baseUrl/
+        )
+      } finally {
+        process.env['NODE_ENV'] = previousEnv
+      }
+    })
+
+    it('should reject a malformed baseUrl', () => {
+      expect(() => new HttpClient({ baseUrl: 'not a url' })).toThrow(/Invalid baseUrl/)
+    })
+
+    it('should reject unsupported protocols', () => {
+      expect(() => new HttpClient({ baseUrl: 'ftp://api.example.com' })).toThrow(
+        /Unsupported baseUrl protocol/
+      )
+    })
   })
 
   describe('setToken', () => {
