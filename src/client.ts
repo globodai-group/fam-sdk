@@ -12,6 +12,22 @@ import { buildUrl, retry } from './utils/index.js'
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1'])
 
+function stripAuthorization(
+  headers: Record<string, string> | undefined
+): Record<string, string> | undefined {
+  if (headers === undefined) {
+    return undefined
+  }
+  const result: Record<string, string> = {}
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === 'authorization') {
+      continue
+    }
+    result[key] = value
+  }
+  return result
+}
+
 function assertSafeBaseUrl(rawBaseUrl: string): void {
   let parsed: URL
   try {
@@ -114,7 +130,7 @@ export class HttpClient {
     this.defaultHeaders = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
-      ...options.headers,
+      ...stripAuthorization(options.headers),
     }
   }
 
@@ -274,13 +290,18 @@ export class HttpClient {
   private buildHeaders(customHeaders?: Record<string, string>): Record<string, string> {
     const headers: Record<string, string> = { ...this.defaultHeaders }
 
+    if (customHeaders !== undefined) {
+      for (const [key, value] of Object.entries(customHeaders)) {
+        if (key.toLowerCase() === 'authorization') {
+          continue
+        }
+        headers[key] = value
+      }
+    }
+
     const authToken = this.token ?? this.publicKey
     if (authToken !== undefined) {
       headers['Authorization'] = `Bearer ${authToken}`
-    }
-
-    if (customHeaders !== undefined) {
-      Object.assign(headers, customHeaders)
     }
 
     return headers

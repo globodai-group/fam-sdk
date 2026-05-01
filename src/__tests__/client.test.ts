@@ -436,5 +436,71 @@ describe('HttpClient', () => {
         })
       )
     })
+
+    it('should not let request-level Authorization override the SDK token', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({}),
+        status: 200,
+        headers: new Headers(),
+      })
+
+      await client.get('/users', {
+        headers: { Authorization: 'Bearer attacker-token' },
+      })
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer test-token',
+          }),
+        })
+      )
+    })
+
+    it('should not let request-level authorization (lowercase) override the SDK token', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({}),
+        status: 200,
+        headers: new Headers(),
+      })
+
+      await client.get('/users', {
+        headers: { authorization: 'Bearer attacker-token' },
+      })
+
+      const callArgs = mockFetch.mock.calls[0]?.[1] as { headers: Record<string, string> }
+      expect(callArgs.headers['Authorization']).toBe('Bearer test-token')
+      expect(callArgs.headers['authorization']).toBeUndefined()
+    })
+
+    it('should not let constructor-level headers override the SDK Authorization', async () => {
+      const c = new HttpClient({
+        baseUrl: 'https://api.example.com',
+        token: 'real-token',
+        retries: 0,
+        headers: { Authorization: 'Bearer attacker-token' },
+      })
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({}),
+        status: 200,
+        headers: new Headers(),
+      })
+
+      await c.get('/users')
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer real-token',
+          }),
+        })
+      )
+    })
   })
 })
