@@ -122,8 +122,20 @@ export function formatAmount(amountInCents: number, currency = 'EUR'): string {
 }
 
 /**
- * Parse amount from currency string to cents
+ * Parse amount from a positive currency value to cents.
+ *
+ * Rejects negative numbers, NaN and Infinity to prevent silently signing
+ * payment payloads with adversarial values that the API would later
+ * reinterpret (refunds-as-charges, integer overflows, etc.).
+ *
+ * @throws RangeError when amount is negative, NaN or non-finite.
  */
 export function parseAmount(amount: number): number {
+  if (typeof amount !== 'number' || !Number.isFinite(amount)) {
+    throw new RangeError(`parseAmount requires a finite number, received ${String(amount)}`)
+  }
+  if (amount < 0) {
+    throw new RangeError(`parseAmount requires a non-negative amount, received ${String(amount)}`)
+  }
   return Math.round(amount * 100)
 }
