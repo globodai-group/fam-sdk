@@ -197,7 +197,7 @@ export interface FamWebhookEvent extends BaseWebhookEvent {
 export type WebhookEvent = MangopayWebhookEvent | FamWebhookEvent
 
 /**
- * Webhook handler configuration
+ * Webhook handler configuration.
  */
 export interface WebhookHandlerConfig {
   /**
@@ -207,4 +207,20 @@ export interface WebhookHandlerConfig {
    * Required: instantiating Webhooks without it throws.
    */
   signingSecret: string
+  /**
+   * Maximum tolerated drift, in **seconds**, between the timestamp embedded
+   * in a Stripe-style signed signature header and the local clock when
+   * calling {@link Webhooks.verifySigned} or
+   * {@link Webhooks.constructEventSigned}.
+   *
+   * A signature whose timestamp falls outside `[now - tolerance, now + tolerance]`
+   * is rejected as a replay candidate, even if the HMAC is valid.
+   *
+   * Default: `300` (5 minutes), matching the de-facto industry standard
+   * (Stripe). Has no effect on the legacy {@link Webhooks.verify} or
+   * {@link Webhooks.constructEvent} which do not consume a timestamp.
+   *
+   * @default 300
+   */
+  timestampTolerance?: number
 }
