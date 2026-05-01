@@ -81,6 +81,63 @@ describe('Webhooks', () => {
     it('should throw on undefined payload', () => {
       expect(() => webhooks.parse(undefined as unknown as string)).toThrow(WebhookSignatureError)
     })
+
+    it('should throw on payload with unknown EventType', () => {
+      const payload = JSON.stringify({
+        EventType: 'NOT_A_REAL_EVENT',
+        RessourceId: '123',
+        Date: 1,
+      })
+      expect(() => webhooks.parse(payload)).toThrow(WebhookSignatureError)
+    })
+
+    it('should throw on payload missing EventType', () => {
+      const payload = JSON.stringify({ RessourceId: '123', Date: 1 })
+      expect(() => webhooks.parse(payload)).toThrow(WebhookSignatureError)
+    })
+
+    it('should throw on payload with non-string RessourceId', () => {
+      const payload = JSON.stringify({
+        EventType: 'PAYIN_NORMAL_SUCCEEDED',
+        RessourceId: 123,
+        Date: 1,
+      })
+      expect(() => webhooks.parse(payload)).toThrow(WebhookSignatureError)
+    })
+
+    it('should throw on payload with non-numeric Date', () => {
+      const payload = JSON.stringify({
+        EventType: 'PAYIN_NORMAL_SUCCEEDED',
+        RessourceId: '123',
+        Date: 'yesterday',
+      })
+      expect(() => webhooks.parse(payload)).toThrow(WebhookSignatureError)
+    })
+
+    it('should throw on array payload', () => {
+      expect(() => webhooks.parse('[]')).toThrow(WebhookSignatureError)
+    })
+
+    it('should accept FAM event with valid Data object', () => {
+      const payload = JSON.stringify({
+        EventType: 'FAM_SUBSCRIPTION_CREATED',
+        RessourceId: 'sub_1',
+        Date: 1,
+        Data: { plan: 'pro' },
+      })
+      const event = webhooks.parse(payload)
+      expect(event.EventType).toBe('FAM_SUBSCRIPTION_CREATED')
+    })
+
+    it('should throw on FAM event with non-object Data', () => {
+      const payload = JSON.stringify({
+        EventType: 'FAM_SUBSCRIPTION_CREATED',
+        RessourceId: 'sub_1',
+        Date: 1,
+        Data: 'not-an-object',
+      })
+      expect(() => webhooks.parse(payload)).toThrow(WebhookSignatureError)
+    })
   })
 
   describe('verify with signing secret', () => {
