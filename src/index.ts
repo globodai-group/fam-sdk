@@ -59,3 +59,16 @@ export {
   UsersModule,
   WalletsModule,
 } from './modules/index.js'
+
+// Webhooks
+export { Webhooks, isFamEvent, isMangopayEvent } from './webhooks/handler.js'
+export type {
+  BaseWebhookEvent,
+  FamEventType,
+  FamWebhookEvent,
+  MangopayEventType,
+  MangopayWebhookEvent,
+  WebhookEvent,
+  WebhookEventType,
+  WebhookHandlerConfig,
+} from './types/webhooks.js'
