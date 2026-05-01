@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { WebhookSignatureError } from '../errors/index.js'
+import { WebhookPayloadError, WebhookSignatureError } from '../errors/index.js'
 import { isFamEvent, isMangopayEvent, Webhooks } from '../webhooks/index.js'
 
 describe('isMangopayEvent', () => {
@@ -70,52 +70,52 @@ describe('Webhooks', () => {
       expect(event.EventType).toBe('PAYIN_NORMAL_SUCCEEDED')
     })
 
-    it('should throw on invalid json', () => {
-      expect(() => webhooks.parse('invalid json {')).toThrow(WebhookSignatureError)
+    it('should throw WebhookPayloadError on invalid json', () => {
+      expect(() => webhooks.parse('invalid json {')).toThrow(WebhookPayloadError)
     })
 
-    it('should throw on null payload', () => {
-      expect(() => webhooks.parse(null as unknown as string)).toThrow(WebhookSignatureError)
+    it('should throw WebhookPayloadError on null payload', () => {
+      expect(() => webhooks.parse(null as unknown as string)).toThrow(WebhookPayloadError)
     })
 
-    it('should throw on undefined payload', () => {
-      expect(() => webhooks.parse(undefined as unknown as string)).toThrow(WebhookSignatureError)
+    it('should throw WebhookPayloadError on undefined payload', () => {
+      expect(() => webhooks.parse(undefined as unknown as string)).toThrow(WebhookPayloadError)
     })
 
-    it('should throw on payload with unknown EventType', () => {
+    it('should throw WebhookPayloadError on payload with unknown EventType', () => {
       const payload = JSON.stringify({
         EventType: 'NOT_A_REAL_EVENT',
         RessourceId: '123',
         Date: 1,
       })
-      expect(() => webhooks.parse(payload)).toThrow(WebhookSignatureError)
+      expect(() => webhooks.parse(payload)).toThrow(WebhookPayloadError)
     })
 
-    it('should throw on payload missing EventType', () => {
+    it('should throw WebhookPayloadError on payload missing EventType', () => {
       const payload = JSON.stringify({ RessourceId: '123', Date: 1 })
-      expect(() => webhooks.parse(payload)).toThrow(WebhookSignatureError)
+      expect(() => webhooks.parse(payload)).toThrow(WebhookPayloadError)
     })
 
-    it('should throw on payload with non-string RessourceId', () => {
+    it('should throw WebhookPayloadError on payload with non-string RessourceId', () => {
       const payload = JSON.stringify({
         EventType: 'PAYIN_NORMAL_SUCCEEDED',
         RessourceId: 123,
         Date: 1,
       })
-      expect(() => webhooks.parse(payload)).toThrow(WebhookSignatureError)
+      expect(() => webhooks.parse(payload)).toThrow(WebhookPayloadError)
     })
 
-    it('should throw on payload with non-numeric Date', () => {
+    it('should throw WebhookPayloadError on payload with non-numeric Date', () => {
       const payload = JSON.stringify({
         EventType: 'PAYIN_NORMAL_SUCCEEDED',
         RessourceId: '123',
         Date: 'yesterday',
       })
-      expect(() => webhooks.parse(payload)).toThrow(WebhookSignatureError)
+      expect(() => webhooks.parse(payload)).toThrow(WebhookPayloadError)
     })
 
-    it('should throw on array payload', () => {
-      expect(() => webhooks.parse('[]')).toThrow(WebhookSignatureError)
+    it('should throw WebhookPayloadError on array payload', () => {
+      expect(() => webhooks.parse('[]')).toThrow(WebhookPayloadError)
     })
 
     it('should accept FAM event with valid Data object', () => {
@@ -129,14 +129,23 @@ describe('Webhooks', () => {
       expect(event.EventType).toBe('FAM_SUBSCRIPTION_CREATED')
     })
 
-    it('should throw on FAM event with non-object Data', () => {
+    it('should throw WebhookPayloadError on FAM event with non-object Data', () => {
       const payload = JSON.stringify({
         EventType: 'FAM_SUBSCRIPTION_CREATED',
         RessourceId: 'sub_1',
         Date: 1,
         Data: 'not-an-object',
       })
-      expect(() => webhooks.parse(payload)).toThrow(WebhookSignatureError)
+      expect(() => webhooks.parse(payload)).toThrow(WebhookPayloadError)
+    })
+
+    it('should not classify payload errors as signature errors', () => {
+      const payload = JSON.stringify({
+        EventType: 'NOT_A_REAL_EVENT',
+        RessourceId: '123',
+        Date: 1,
+      })
+      expect(() => webhooks.parse(payload)).not.toThrow(WebhookSignatureError)
     })
   })
 
@@ -201,6 +210,16 @@ describe('Webhooks', () => {
       expect(event.RessourceId).toBe('123456')
     })
 
+    it('should throw WebhookPayloadError (not WebhookSignatureError) when payload is well-signed but malformed', () => {
+      const malformed = JSON.stringify({ foo: 'bar' })
+      const validSignature = sign(malformed, signingSecret)
+
+      expect(() => webhooks.constructEvent(malformed, validSignature)).toThrow(WebhookPayloadError)
+      expect(() => webhooks.constructEvent(malformed, validSignature)).not.toThrow(
+        WebhookSignatureError
+      )
+    })
+
     it('should reject signature with non-hex characters of the right length', () => {
       const garbage = 'z'.repeat(64)
       expect(() => webhooks.constructEvent(payload, garbage)).toThrow(WebhookSignatureError)
@@ -244,6 +263,21 @@ describe('Webhooks', () => {
       }
 
       expect(webhooks.isEventType(event, 'PAYIN_NORMAL_FAILED')).toBe(false)
+    })
+  })
+
+  describe('error class disjunction', () => {
+    it('should keep WebhookSignatureError and WebhookPayloadError as distinct constructors', () => {
+      // Their identity must not collapse: a consumer should be able to write
+      // disjoint catch branches (`instanceof WebhookSignatureError` vs
+      // `instanceof WebhookPayloadError`) and route to different HTTP codes.
+      expect(WebhookSignatureError).not.toBe(WebhookPayloadError)
+      const sig = new WebhookSignatureError()
+      const payload = new WebhookPayloadError()
+      expect(sig).toBeInstanceOf(WebhookSignatureError)
+      expect(sig).not.toBeInstanceOf(WebhookPayloadError)
+      expect(payload).toBeInstanceOf(WebhookPayloadError)
+      expect(payload).not.toBeInstanceOf(WebhookSignatureError)
     })
   })
 })
