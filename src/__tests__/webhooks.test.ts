@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import { WebhookSignatureError } from '../errors/index.js'
 import { isFamEvent, isMangopayEvent, Webhooks } from '../webhooks/index.js'
@@ -152,16 +153,42 @@ describe('Webhooks', () => {
   })
 
   describe('constructEvent with signing secret', () => {
-    const webhooks = new Webhooks({ signingSecret: 'secret' })
+    const signingSecret = 'test-secret-key'
+    const webhooks = new Webhooks({ signingSecret })
+
+    const payload = JSON.stringify({
+      EventType: 'PAYIN_NORMAL_SUCCEEDED',
+      RessourceId: '123456',
+      Date: 1234567890,
+    })
+
+    const sign = (body: string, secret: string): string =>
+      createHmac('sha256', secret).update(body).digest('hex')
 
     it('should throw when signature is missing', () => {
-      const payload = JSON.stringify({
-        EventType: 'PAYIN_NORMAL_SUCCEEDED',
-        RessourceId: '123456',
-        Date: 1234567890,
-      })
-
       expect(() => webhooks.constructEvent(payload, undefined)).toThrow(WebhookSignatureError)
+    })
+
+    it('should throw when signature was computed with a different secret', () => {
+      const forgedSignature = sign(payload, 'wrong-secret')
+
+      expect(() => webhooks.constructEvent(payload, forgedSignature)).toThrow(WebhookSignatureError)
+    })
+
+    it('should throw when signature is the right length but garbage', () => {
+      const garbageSignature = 'a'.repeat(64)
+
+      expect(() => webhooks.constructEvent(payload, garbageSignature)).toThrow(
+        WebhookSignatureError
+      )
+    })
+
+    it('should construct event when signature is valid', () => {
+      const validSignature = sign(payload, signingSecret)
+
+      const event = webhooks.constructEvent(payload, validSignature)
+      expect(event.EventType).toBe('PAYIN_NORMAL_SUCCEEDED')
+      expect(event.RessourceId).toBe('123456')
     })
   })
 
