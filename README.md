@@ -43,6 +43,40 @@
 - Node.js 18.0.0 or higher
 - TypeScript 5.0+ (recommended)
 
+## Migrating from 1.17.x to 1.18.x
+
+Versions `1.17.2` to `1.18.2` ship a security hardening pass with
+runtime-breaking changes. If you upgrade from `1.17.1` you must adapt
+your consumer code on the points below — otherwise affected paths will
+throw at runtime.
+
+- **`Webhooks` constructor now requires a non-empty `signingSecret`.**
+  Pass `signingSecret: process.env.FAM_WEBHOOK_SIGNING_SECRET!` (or
+  equivalent). Instantiating without it throws `WebhookSignatureError`.
+- **`webhooks.constructEvent(payload, signature)` throws on invalid
+  signatures and unknown payload shapes.** Wrap calls in `try/catch` and
+  return a `400` to the caller. Unknown `EventType` values now throw —
+  open an issue if you need a new Mangopay/FAM event type added.
+- **`verifyWithTimestamp` has been removed** (the previous implementation
+  did not include the timestamp in the HMAC, allowing replay). Migrate
+  to `constructEvent`.
+- **`baseUrl` rejects `http://` outside `localhost`/`127.0.0.1`.** Use
+  `https://` in staging and production.
+- **Custom `Authorization` headers are stripped** (case-insensitive) at
+  both the `HttpClient` constructor and per-request level. Use
+  `client.setToken(...)` if you need to swap the bearer token.
+- **`ApiError.details` is now allowlisted.** It no longer leaks the full
+  response body. If you read specific fields on `details`, double-check
+  they are still exposed.
+- **`parseAmount` throws `RangeError` on negative, `NaN`, and non-finite
+  inputs.** Validate user input before calling it.
+
+Full change details are in the GitHub Releases:
+[v1.17.2](https://github.com/globodai-group/fam-sdk/releases/tag/v1.17.2),
+[v1.18.0](https://github.com/globodai-group/fam-sdk/releases/tag/v1.18.0),
+[v1.18.1](https://github.com/globodai-group/fam-sdk/releases/tag/v1.18.1),
+[v1.18.2](https://github.com/globodai-group/fam-sdk/releases/tag/v1.18.2).
+
 ## Installation
 
 ```bash
