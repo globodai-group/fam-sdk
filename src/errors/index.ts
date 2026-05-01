@@ -133,12 +133,37 @@ export class TimeoutError extends NetworkError {
 }
 
 /**
- * Webhook signature verification error
+ * Thrown when the HMAC signature of an incoming webhook does not match the
+ * expected value, when the signature header is missing or empty, or when the
+ * `Webhooks` handler is instantiated without a non-empty `signingSecret`.
+ *
+ * Map this to **HTTP 401** at the consumer's HTTP boundary — it signals an
+ * **authentication** failure of the webhook request, not a malformed payload.
+ *
+ * @see WebhookPayloadError for shape / event-type validation failures.
  */
 export class WebhookSignatureError extends FamError {
   public override readonly name: string = 'WebhookSignatureError'
 
   constructor(message = 'Invalid webhook signature') {
+    super(message)
+  }
+}
+
+/**
+ * Thrown when the body of an incoming webhook is not valid JSON, is not an
+ * object, has an unknown `EventType`, or is missing / has the wrong type for
+ * required fields (`RessourceId`, `Date`, `Data`).
+ *
+ * Map this to **HTTP 400** at the consumer's HTTP boundary — it signals a
+ * malformed payload, distinct from an authentication failure.
+ *
+ * @see WebhookSignatureError for HMAC / authentication failures.
+ */
+export class WebhookPayloadError extends FamError {
+  public override readonly name: string = 'WebhookPayloadError'
+
+  constructor(message = 'Invalid webhook payload') {
     super(message)
   }
 }

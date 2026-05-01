@@ -9,6 +9,7 @@ import {
   RateLimitError,
   TimeoutError,
   ValidationError,
+  WebhookPayloadError,
   WebhookSignatureError,
 } from '../errors/index.js'
 
@@ -147,5 +148,34 @@ describe('WebhookSignatureError', () => {
     const error = new WebhookSignatureError('invalid signature')
     expect(error.message).toBe('invalid signature')
     expect(error.name).toBe('WebhookSignatureError')
+  })
+
+  it('should extend FamError', () => {
+    expect(new WebhookSignatureError()).toBeInstanceOf(FamError)
+  })
+
+  it('should provide a sensible default message', () => {
+    expect(new WebhookSignatureError().message).toBe('Invalid webhook signature')
+  })
+})
+
+describe('WebhookPayloadError', () => {
+  it('should create a webhook payload error', () => {
+    const error = new WebhookPayloadError('unknown EventType')
+    expect(error.message).toBe('unknown EventType')
+    expect(error.name).toBe('WebhookPayloadError')
+  })
+
+  it('should extend FamError', () => {
+    expect(new WebhookPayloadError()).toBeInstanceOf(FamError)
+  })
+
+  it('should provide a sensible default message', () => {
+    expect(new WebhookPayloadError().message).toBe('Invalid webhook payload')
+  })
+
+  it('should be a distinct class from WebhookSignatureError', () => {
+    expect(new WebhookPayloadError()).not.toBeInstanceOf(WebhookSignatureError)
+    expect(new WebhookSignatureError()).not.toBeInstanceOf(WebhookPayloadError)
   })
 })
