@@ -21,6 +21,7 @@ export {
   RateLimitError,
   TimeoutError,
   ValidationError,
+  WebhookPayloadError,
   WebhookSignatureError,
 } from './errors/index.js'
 
