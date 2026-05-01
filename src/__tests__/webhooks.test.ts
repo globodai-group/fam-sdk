@@ -37,11 +37,6 @@ describe('Webhooks', () => {
       const handler = new Webhooks({ signingSecret: 'secret' })
       expect(handler).toBeInstanceOf(Webhooks)
     })
-
-    it('should accept custom timestamp tolerance', () => {
-      const handler = new Webhooks({ timestampTolerance: 600 })
-      expect(handler).toBeInstanceOf(Webhooks)
-    })
   })
 
   describe('parse', () => {
@@ -112,28 +107,6 @@ describe('Webhooks', () => {
     it('should return false for invalid signature', () => {
       const result = webhooks.verify('payload', 'invalid-signature-that-is-long-enough')
       expect(result).toBe(false)
-    })
-  })
-
-  describe('verifyWithTimestamp', () => {
-    const webhooks = new Webhooks({ signingSecret: 'secret' })
-
-    it('should throw on expired timestamp', () => {
-      const now = Math.floor(Date.now() / 1000)
-      const oldTimestamp = now - 600 // 10 minutes ago
-
-      expect(() => webhooks.verifyWithTimestamp('payload', 'sig', oldTimestamp)).toThrow(
-        WebhookSignatureError
-      )
-    })
-
-    it('should throw on future timestamp beyond tolerance', () => {
-      const now = Math.floor(Date.now() / 1000)
-      const futureTimestamp = now + 600 // 10 minutes in future
-
-      expect(() => webhooks.verifyWithTimestamp('payload', 'sig', futureTimestamp)).toThrow(
-        WebhookSignatureError
-      )
     })
   })
 

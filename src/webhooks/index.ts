@@ -30,11 +30,9 @@ export function isFamEvent(eventType: string): eventType is FamEventType {
  */
 export class Webhooks {
   private readonly signingSecret: string | undefined
-  private readonly timestampTolerance: number
 
   constructor(config: WebhookHandlerConfig = {}) {
     this.signingSecret = config.signingSecret
-    this.timestampTolerance = config.timestampTolerance ?? 300 // 5 minutes default
   }
 
   /**
@@ -56,20 +54,6 @@ export class Webhooks {
     } catch {
       throw new WebhookSignatureError('Invalid webhook signature')
     }
-  }
-
-  /**
-   * Verify webhook with timestamp validation
-   */
-  verifyWithTimestamp(payload: string, signature: string | undefined, timestamp: number): boolean {
-    const now = Math.floor(Date.now() / 1000)
-    const age = Math.abs(now - timestamp)
-
-    if (age > this.timestampTolerance) {
-      throw new WebhookSignatureError(`Webhook timestamp too old (${String(age)} seconds)`)
-    }
-
-    return this.verify(payload, signature)
   }
 
   /**

@@ -110,6 +110,4 @@ export type WebhookEvent = MangopayWebhookEvent | FamWebhookEvent
 export interface WebhookHandlerConfig {
   /** Secret key for signature verification */
   signingSecret?: string
-  /** Tolerance for timestamp validation in seconds */
-  timestampTolerance?: number
 }
