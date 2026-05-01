@@ -95,7 +95,9 @@ export class Webhooks {
    * Construct and verify webhook event
    */
   constructEvent(payload: string, signature: string | undefined): WebhookEvent {
-    this.verify(payload, signature)
+    if (!this.verify(payload, signature)) {
+      throw new WebhookSignatureError('Invalid webhook signature')
+    }
     return this.parse(payload)
   }
 
