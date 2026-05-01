@@ -85,6 +85,20 @@ describe('parseAmount', () => {
     expect(parseAmount(10.999)).toBe(1100)
     expect(parseAmount(10.001)).toBe(1000)
   })
+
+  it('should throw on negative amounts', () => {
+    expect(() => parseAmount(-1)).toThrow(RangeError)
+    expect(() => parseAmount(-0.01)).toThrow(RangeError)
+  })
+
+  it('should throw on NaN', () => {
+    expect(() => parseAmount(Number.NaN)).toThrow(RangeError)
+  })
+
+  it('should throw on Infinity', () => {
+    expect(() => parseAmount(Number.POSITIVE_INFINITY)).toThrow(RangeError)
+    expect(() => parseAmount(Number.NEGATIVE_INFINITY)).toThrow(RangeError)
+  })
 })
 
 describe('sleep', () => {
