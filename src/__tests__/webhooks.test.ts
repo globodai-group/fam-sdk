@@ -266,6 +266,143 @@ describe('Webhooks', () => {
     })
   })
 
+  describe('verifySigned (Stripe-style replay protection)', () => {
+    const signingSecret = 'test-secret-key'
+
+    const sign = (timestamp: number, body: string, secret: string): string =>
+      createHmac('sha256', secret)
+        .update(`${String(timestamp)}.${body}`)
+        .digest('hex')
+
+    const buildHeader = (timestamp: number, body: string, secret: string): string =>
+      `t=${String(timestamp)},v1=${sign(timestamp, body, secret)}`
+
+    it('should accept a freshly-signed valid header', () => {
+      const webhooks = new Webhooks({ signingSecret })
+      const body = JSON.stringify({
+        EventType: 'PAYIN_NORMAL_SUCCEEDED',
+        RessourceId: '1',
+        Date: 1,
+      })
+      const ts = Math.floor(Date.now() / 1000)
+      expect(webhooks.verifySigned(body, buildHeader(ts, body, signingSecret))).toBe(true)
+    })
+
+    it('should reject a header signed with a different secret', () => {
+      const webhooks = new Webhooks({ signingSecret })
+      const ts = Math.floor(Date.now() / 1000)
+      const header = buildHeader(ts, 'body', 'other-secret')
+      expect(webhooks.verifySigned('body', header)).toBe(false)
+    })
+
+    it('should throw when the header is missing', () => {
+      const webhooks = new Webhooks({ signingSecret })
+      expect(() => webhooks.verifySigned('body', undefined)).toThrow(WebhookSignatureError)
+    })
+
+    it('should throw when the timestamp segment is missing', () => {
+      const webhooks = new Webhooks({ signingSecret })
+      expect(() => webhooks.verifySigned('body', 'v1=abc')).toThrow(WebhookSignatureError)
+    })
+
+    it('should throw when the v1 segment is missing', () => {
+      const webhooks = new Webhooks({ signingSecret })
+      expect(() => webhooks.verifySigned('body', 't=1714579200')).toThrow(WebhookSignatureError)
+    })
+
+    it('should throw when the timestamp is not an integer string', () => {
+      const webhooks = new Webhooks({ signingSecret })
+      expect(() => webhooks.verifySigned('body', 't=abc,v1=xx')).toThrow(WebhookSignatureError)
+    })
+
+    it('should reject a captured signature replayed outside the tolerance window', () => {
+      const webhooks = new Webhooks({ signingSecret, timestampTolerance: 60 })
+      const stale = Math.floor(Date.now() / 1000) - 3600 // 1h ago
+      const header = buildHeader(stale, 'body', signingSecret)
+      expect(() => webhooks.verifySigned('body', header)).toThrow(WebhookSignatureError)
+    })
+
+    it('should reject a future-dated signature outside the tolerance window', () => {
+      const webhooks = new Webhooks({ signingSecret, timestampTolerance: 60 })
+      const future = Math.floor(Date.now() / 1000) + 3600
+      const header = buildHeader(future, 'body', signingSecret)
+      expect(() => webhooks.verifySigned('body', header)).toThrow(WebhookSignatureError)
+    })
+
+    it('should refuse a tampered payload signed with the original timestamp', () => {
+      const webhooks = new Webhooks({ signingSecret })
+      const ts = Math.floor(Date.now() / 1000)
+      const header = buildHeader(ts, 'original', signingSecret)
+      expect(webhooks.verifySigned('tampered', header)).toBe(false)
+    })
+
+    it('should refuse a v1 signature copied from another timestamp (timestamp swap)', () => {
+      const webhooks = new Webhooks({ signingSecret })
+      const ts = Math.floor(Date.now() / 1000)
+      // Take a signature legitimately produced for ts, but advertise a
+      // different timestamp in the header. The HMAC over `${ts2}.${body}`
+      // will not match the v1 from `${ts}.${body}`.
+      const realSig = sign(ts, 'body', signingSecret)
+      const ts2 = ts + 1
+      expect(webhooks.verifySigned('body', `t=${String(ts2)},v1=${realSig}`)).toBe(false)
+    })
+
+    it('should reject negative or non-positive timestampTolerance at construction', () => {
+      expect(() => new Webhooks({ signingSecret, timestampTolerance: 0 })).toThrow(
+        WebhookSignatureError
+      )
+      expect(() => new Webhooks({ signingSecret, timestampTolerance: -10 })).toThrow(
+        WebhookSignatureError
+      )
+      expect(
+        () => new Webhooks({ signingSecret, timestampTolerance: Number.NaN as unknown as number })
+      ).toThrow(WebhookSignatureError)
+    })
+
+    it('should ignore unknown signature schemes (e.g. v0, v2) for forward compatibility', () => {
+      const webhooks = new Webhooks({ signingSecret })
+      const ts = Math.floor(Date.now() / 1000)
+      const v1 = sign(ts, 'body', signingSecret)
+      const header = `t=${String(ts)},v0=ignored,v1=${v1},v2=also-ignored`
+      expect(webhooks.verifySigned('body', header)).toBe(true)
+    })
+  })
+
+  describe('constructEventSigned', () => {
+    const signingSecret = 'test-secret-key'
+
+    const buildHeader = (timestamp: number, body: string, secret: string): string =>
+      `t=${String(timestamp)},v1=${createHmac('sha256', secret)
+        .update(`${String(timestamp)}.${body}`)
+        .digest('hex')}`
+
+    it('should construct event when signed header is valid and payload well-formed', () => {
+      const webhooks = new Webhooks({ signingSecret })
+      const body = JSON.stringify({
+        EventType: 'PAYIN_NORMAL_SUCCEEDED',
+        RessourceId: '42',
+        Date: 1,
+      })
+      const ts = Math.floor(Date.now() / 1000)
+      const event = webhooks.constructEventSigned(body, buildHeader(ts, body, signingSecret))
+      expect(event.EventType).toBe('PAYIN_NORMAL_SUCCEEDED')
+      expect(event.RessourceId).toBe('42')
+    })
+
+    it('should throw WebhookSignatureError when signed header is invalid', () => {
+      const webhooks = new Webhooks({ signingSecret })
+      expect(() => webhooks.constructEventSigned('{}', 'garbage')).toThrow(WebhookSignatureError)
+    })
+
+    it('should throw WebhookPayloadError when signed correctly but payload malformed', () => {
+      const webhooks = new Webhooks({ signingSecret })
+      const ts = Math.floor(Date.now() / 1000)
+      const body = JSON.stringify({ foo: 'bar' })
+      const header = buildHeader(ts, body, signingSecret)
+      expect(() => webhooks.constructEventSigned(body, header)).toThrow(WebhookPayloadError)
+    })
+  })
+
   describe('error class disjunction', () => {
     it('should keep WebhookSignatureError and WebhookPayloadError as distinct constructors', () => {
       // Their identity must not collapse: a consumer should be able to write
