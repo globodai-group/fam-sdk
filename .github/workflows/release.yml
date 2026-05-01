@@ -45,16 +45,26 @@ jobs:
       - name: Get version bump type
         id: version-type
         run: |
-          # Analyze commits since last tag
+          # Analyze every commit since the last tag against Conventional
+          # Commits semver rules. Three signals trigger a MAJOR bump:
+          #   1. Any commit whose subject starts with `<type>(<scope>)?!:`
+          #      (the "!" denotes a breaking change, regardless of type —
+          #      `fix!:`, `refactor!:`, etc. are all major).
+          #   2. Any commit whose body or footer contains `BREAKING CHANGE:`
+          #      (the canonical Conventional Commits footer).
+          # MINOR is reserved for `feat:` (with or without scope, no `!`).
+          # Everything else (fix:, perf:, refactor:, chore:, ci:, docs:,
+          # test:, style:) is PATCH.
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           echo "Last tag: $LAST_TAG"
 
-          # Check commit messages for version bump indicators
-          COMMITS=$(git log $LAST_TAG..HEAD --pretty=format:"%s" 2>/dev/null || git log --pretty=format:"%s")
+          SUBJECTS=$(git log "$LAST_TAG"..HEAD --pretty=format:"%s" 2>/dev/null || git log --pretty=format:"%s")
+          BODIES=$(git log "$LAST_TAG"..HEAD --pretty=format:"%B" 2>/dev/null || git log --pretty=format:"%B")
 
-          if echo "$COMMITS" | grep -qE "^(feat|feature)(\(.+\))?!:|BREAKING CHANGE"; then
+          if echo "$SUBJECTS" | grep -qE "^[a-z]+(\(.+\))?!:" \
+            || echo "$BODIES" | grep -qE "^BREAKING[ -]CHANGE:"; then
             echo "bump=major" >> $GITHUB_OUTPUT
-          elif echo "$COMMITS" | grep -qE "^(feat|feature)(\(.+\))?:"; then
+          elif echo "$SUBJECTS" | grep -qE "^(feat|feature)(\(.+\))?:"; then
             echo "bump=minor" >> $GITHUB_OUTPUT
           else
             echo "bump=patch" >> $GITHUB_OUTPUT
