@@ -4,12 +4,54 @@
 
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { WebhookSignatureError } from '../errors/index.js'
-import type {
-  FamEventType,
-  MangopayEventType,
-  WebhookEvent,
-  WebhookHandlerConfig,
+import {
+  KNOWN_WEBHOOK_EVENT_TYPES,
+  type FamEventType,
+  type MangopayEventType,
+  type WebhookEvent,
+  type WebhookEventType,
+  type WebhookHandlerConfig,
 } from '../types/webhooks.js'
+
+function isKnownEventType(value: unknown): value is WebhookEventType {
+  return (
+    typeof value === 'string' && (KNOWN_WEBHOOK_EVENT_TYPES as readonly string[]).includes(value)
+  )
+}
+
+function assertWebhookEvent(candidate: unknown): WebhookEvent {
+  if (typeof candidate !== 'object' || candidate === null || Array.isArray(candidate)) {
+    throw new WebhookSignatureError('Invalid webhook payload: expected a JSON object')
+  }
+
+  const obj = candidate as Record<string, unknown>
+
+  if (!isKnownEventType(obj['EventType'])) {
+    throw new WebhookSignatureError(
+      `Invalid webhook payload: unknown or missing EventType (got ${String(obj['EventType'])})`
+    )
+  }
+
+  if (typeof obj['RessourceId'] !== 'string' || obj['RessourceId'].length === 0) {
+    throw new WebhookSignatureError(
+      'Invalid webhook payload: RessourceId must be a non-empty string'
+    )
+  }
+
+  if (typeof obj['Date'] !== 'number' || !Number.isFinite(obj['Date'])) {
+    throw new WebhookSignatureError('Invalid webhook payload: Date must be a finite number')
+  }
+
+  if (
+    obj['EventType'].startsWith('FAM_') &&
+    obj['Data'] !== undefined &&
+    (typeof obj['Data'] !== 'object' || obj['Data'] === null || Array.isArray(obj['Data']))
+  ) {
+    throw new WebhookSignatureError('Invalid webhook payload: Data must be an object when present')
+  }
+
+  return obj as unknown as WebhookEvent
+}
 
 /**
  * Check if event is a Mangopay event
@@ -60,19 +102,21 @@ export class Webhooks {
    * Parse webhook payload
    */
   parse(payload: unknown): WebhookEvent {
+    let candidate: unknown
+
     if (typeof payload === 'string') {
       try {
-        return JSON.parse(payload) as WebhookEvent
+        candidate = JSON.parse(payload)
       } catch {
         throw new WebhookSignatureError('Invalid webhook payload: not valid JSON')
       }
+    } else if (typeof payload === 'object' && payload !== null) {
+      candidate = payload
+    } else {
+      throw new WebhookSignatureError('Invalid webhook payload: expected object or JSON string')
     }
 
-    if (typeof payload === 'object' && payload !== null) {
-      return payload as WebhookEvent
-    }
-
-    throw new WebhookSignatureError('Invalid webhook payload: expected object or JSON string')
+    return assertWebhookEvent(candidate)
   }
 
   /**
