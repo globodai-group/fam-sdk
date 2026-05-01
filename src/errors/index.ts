@@ -11,19 +11,41 @@ export class FamError extends Error {
 }
 
 /**
+ * Allowlist for ApiError.details. The remote API response body may contain
+ * sensitive material (internal IDs, tokens, full Mangopay payloads) that
+ * consumers tend to ship to Sentry/console as soon as they catch and log
+ * the error. We persist only the fields needed to reason about the failure.
+ */
+const API_ERROR_DETAILS_ALLOWLIST = ['message', 'code', 'errors'] as const
+
+function sanitizeApiErrorDetails(raw: unknown): Record<string, unknown> | undefined {
+  if (raw === null || typeof raw !== 'object') {
+    return undefined
+  }
+  const source = raw as Record<string, unknown>
+  const safe: Record<string, unknown> = {}
+  for (const key of API_ERROR_DETAILS_ALLOWLIST) {
+    if (key in source) {
+      safe[key] = source[key]
+    }
+  }
+  return Object.keys(safe).length === 0 ? undefined : safe
+}
+
+/**
  * API error with status code and response details
  */
 export class ApiError extends FamError {
   public override readonly name: string = 'ApiError'
   public readonly statusCode: number
   public readonly code: string | undefined
-  public readonly details: unknown
+  public readonly details: Record<string, unknown> | undefined
 
   constructor(message: string, statusCode: number, code?: string, details?: unknown) {
     super(message)
     this.statusCode = statusCode
     this.code = code
-    this.details = details
+    this.details = sanitizeApiErrorDetails(details)
   }
 }
 
@@ -68,7 +90,7 @@ export class ValidationError extends ApiError {
   public readonly errors: Record<string, string[]>
 
   constructor(message: string, errors: Record<string, string[]> = {}) {
-    super(message, 422, 'VALIDATION_ERROR', errors)
+    super(message, 422, 'VALIDATION_ERROR', { errors })
     this.errors = errors
   }
 }

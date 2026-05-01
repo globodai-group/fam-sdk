@@ -29,47 +29,31 @@ export function isFamEvent(eventType: string): eventType is FamEventType {
  * Webhooks handler class
  */
 export class Webhooks {
-  private readonly signingSecret: string | undefined
-  private readonly timestampTolerance: number
+  private readonly signingSecret: string
 
-  constructor(config: WebhookHandlerConfig = {}) {
+  constructor(config: WebhookHandlerConfig) {
+    // Runtime guard: protects JS consumers (no compile-time types) from
+    // instantiating an unconfigured handler. The TS compiler already enforces
+    // signingSecret as required, hence the disable.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (config.signingSecret === undefined || config.signingSecret.length === 0) {
+      throw new WebhookSignatureError(
+        'Webhooks handler requires a non-empty signingSecret. Provide FAM_WEBHOOK_SIGNING_SECRET from the FAM admin (per environment).'
+      )
+    }
     this.signingSecret = config.signingSecret
-    this.timestampTolerance = config.timestampTolerance ?? 300 // 5 minutes default
   }
 
   /**
    * Verify webhook signature
    */
   verify(payload: string, signature: string | undefined): boolean {
-    if (this.signingSecret === undefined) {
-      // No signing secret configured, skip verification
-      return true
-    }
-
     if (signature === undefined || signature.length === 0) {
       throw new WebhookSignatureError('Missing webhook signature')
     }
 
-    try {
-      const expectedSignature = this.computeSignature(payload)
-      return this.secureCompare(signature, expectedSignature)
-    } catch {
-      throw new WebhookSignatureError('Invalid webhook signature')
-    }
-  }
-
-  /**
-   * Verify webhook with timestamp validation
-   */
-  verifyWithTimestamp(payload: string, signature: string | undefined, timestamp: number): boolean {
-    const now = Math.floor(Date.now() / 1000)
-    const age = Math.abs(now - timestamp)
-
-    if (age > this.timestampTolerance) {
-      throw new WebhookSignatureError(`Webhook timestamp too old (${String(age)} seconds)`)
-    }
-
-    return this.verify(payload, signature)
+    const expectedSignature = this.computeSignature(payload)
+    return this.secureCompare(signature, expectedSignature)
   }
 
   /**
@@ -95,7 +79,9 @@ export class Webhooks {
    * Construct and verify webhook event
    */
   constructEvent(payload: string, signature: string | undefined): WebhookEvent {
-    this.verify(payload, signature)
+    if (!this.verify(payload, signature)) {
+      throw new WebhookSignatureError('Invalid webhook signature')
+    }
     return this.parse(payload)
   }
 
@@ -110,10 +96,6 @@ export class Webhooks {
    * Compute HMAC signature
    */
   private computeSignature(payload: string): string {
-    if (this.signingSecret === undefined) {
-      throw new Error('Signing secret not configured')
-    }
-
     const hmac = createHmac('sha256', this.signingSecret)
     hmac.update(payload)
     return hmac.digest('hex')
