@@ -95,9 +95,13 @@ describe('Webhooks', () => {
       expect(() => webhooks.verify('payload', '')).toThrow(WebhookSignatureError)
     })
 
-    it('should return false for invalid signature', () => {
-      const result = webhooks.verify('payload', 'invalid-signature-that-is-long-enough')
-      expect(result).toBe(false)
+    it('should return false for invalid signature of the right length', () => {
+      const wrong = 'a'.repeat(64)
+      expect(webhooks.verify('payload', wrong)).toBe(false)
+    })
+
+    it('should return false for signature of wrong length', () => {
+      expect(webhooks.verify('payload', 'short')).toBe(false)
     })
   })
 
@@ -138,6 +142,27 @@ describe('Webhooks', () => {
       const event = webhooks.constructEvent(payload, validSignature)
       expect(event.EventType).toBe('PAYIN_NORMAL_SUCCEEDED')
       expect(event.RessourceId).toBe('123456')
+    })
+
+    it('should reject signature with non-hex characters of the right length', () => {
+      const garbage = 'z'.repeat(64)
+      expect(() => webhooks.constructEvent(payload, garbage)).toThrow(WebhookSignatureError)
+    })
+
+    it('should reject when payload is mutated after signing (replay of mutated body)', () => {
+      const validSignature = sign(payload, signingSecret)
+      const tampered = payload.replace('"123456"', '"999999"')
+      expect(() => webhooks.constructEvent(tampered, validSignature)).toThrow(WebhookSignatureError)
+    })
+
+    it('should reject very large payload signed with the wrong secret', () => {
+      const largeBody = JSON.stringify({
+        EventType: 'PAYIN_NORMAL_SUCCEEDED',
+        RessourceId: 'x'.repeat(100_000),
+        Date: 1,
+      })
+      const forged = sign(largeBody, 'not-the-secret')
+      expect(() => webhooks.constructEvent(largeBody, forged)).toThrow(WebhookSignatureError)
     })
   })
 
