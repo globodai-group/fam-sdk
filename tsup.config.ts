@@ -15,4 +15,11 @@ export default defineConfig({
   target: 'es2022',
   outDir: 'dist',
   tsconfig: 'tsconfig.build.json',
+  // Mark the package itself as external so that the /webhooks subpath bundle
+  // does not re-inline the runtime classes defined at the root entry-point.
+  // At load time the subpath resolves `require('globodai-fam-sdk')` to
+  // dist/index.{cjs,js}, guaranteeing a single instance of `Webhooks`,
+  // `WebhookSignatureError` and `WebhookPayloadError` across entry-points
+  // (so `instanceof` is stable).
+  external: ['globodai-fam-sdk'],
 })
