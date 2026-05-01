@@ -82,19 +82,41 @@ export class SubscriptionsModule extends BaseModule {
   }
 
   /**
-   * Cancel a subscription (disable processing only)
-   * This keeps the MangoPay registration active but disables local processing.
-   * Use this when modifying a bundle (e.g., removing one product but keeping others).
+   * **Pause** local processing of a subscription **without** terminating the
+   * underlying Mangopay registration. The next scheduled charge will not
+   * be processed by FAM, but the Mangopay `RecurringPayinRegistration`
+   * stays in its current status — you can re-enable processing later via
+   * {@link SubscriptionsModule.enable}.
+   *
+   * **Use this when**: a single product is being removed from a multi-product
+   * bundle and the rest of the bundle should keep billing.
+   *
+   * **Do NOT use this** to terminate a subscription for good — the Mangopay
+   * registration will remain in `Created` / `InProgress` and continue to
+   * count against the user's active recurring registrations limit.
+   * For a permanent termination, use {@link SubscriptionsModule.end}.
+   *
+   * @see SubscriptionsModule.end For permanent termination on the Mangopay side.
    */
   async cancel(subscriptionId: string): Promise<RecurringSubscription> {
     return this.post<RecurringSubscription>(`${subscriptionId}/cancel`)
   }
 
   /**
-   * End a subscription completely in MangoPay
-   * This terminates the RecurringPayinRegistration in MangoPay (Status = ENDED)
-   * and disables local processing. Use this when cancelling the entire bundle
-   * (no remaining products).
+   * **Permanently terminate** a subscription on the Mangopay side. The
+   * Mangopay `RecurringPayinRegistration` is moved to `Status = ENDED`
+   * (irreversible) and local processing is disabled.
+   *
+   * **Use this when**: the entire bundle is cancelled and no remaining
+   * product justifies keeping the recurring registration alive (e.g. user
+   * full unsubscribe, account closure).
+   *
+   * **Do NOT use this** if you only want to pause billing temporarily or to
+   * transition between bundles — once `ENDED`, a new
+   * `RecurringPayinRegistration` must be created from scratch. For that,
+   * use {@link SubscriptionsModule.cancel} instead.
+   *
+   * @see SubscriptionsModule.cancel For a pausable, non-destructive disable.
    */
   async end(subscriptionId: string): Promise<RecurringSubscription> {
     return this.post<RecurringSubscription>(`${subscriptionId}/end`)

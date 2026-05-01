@@ -115,8 +115,16 @@ export interface PortalUser {
 export interface CreatePortalSessionRequest {
   /** The MangoPay user ID to create the session for */
   mangopayUserId: string
-  /** URL to redirect to after portal actions (optional) */
+  /**
+   * URL to redirect the user to after a **successful** portal action
+   * (e.g. completed checkout, validated subscription).
+   */
   returnUrl?: string
+  /**
+   * URL to redirect the user to if they **cancel or abandon** a portal
+   * action. If omitted, the portal falls back to `returnUrl`.
+   */
+  cancelUrl?: string
   /** Session expiration in minutes (default: 60, max: 1440) */
   expiresInMinutes?: number
   /** Optional checkout configuration for direct checkout flow */

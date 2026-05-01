@@ -68,6 +68,7 @@ export type {
   FamWebhookEvent,
   MangopayEventType,
   MangopayWebhookEvent,
+  ResourceId,
   WebhookEvent,
   WebhookEventType,
   WebhookHandlerConfig,

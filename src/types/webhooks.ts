@@ -143,13 +143,38 @@ export type FamEventType =
 export type WebhookEventType = MangopayEventType | FamEventType
 
 /**
- * Base webhook event
+ * Base webhook event.
+ *
+ * Note on `RessourceId`: the upstream Mangopay payload misspells `ResourceId`
+ * with a double `s`. The SDK preserves the misspelling on the wire so that
+ * existing consumer code keeps working, but you can also access the same
+ * value via the {@link ResourceId} accessor type — see `ResourceId` below.
  */
 export interface BaseWebhookEvent {
   EventType: WebhookEventType
+  /**
+   * The Mangopay resource identifier the event refers to. Spelled
+   * `RessourceId` (double `s`) on the wire, mirroring the Mangopay payload.
+   * Prefer the {@link ResourceId} alias in new consumer code.
+   */
   RessourceId: string
   Date: number
 }
+
+/**
+ * Read-only accessor type for the resource id of a {@link BaseWebhookEvent}.
+ *
+ * Lets consumer code spell the field correctly:
+ *
+ * ```ts
+ * const id: ResourceId<typeof event> = event.RessourceId
+ * ```
+ *
+ * No runtime cost — this is purely a type alias mapping the misspelled
+ * `RessourceId` field. The wire format remains `RessourceId` because that
+ * is what Mangopay sends; this alias only exists for ergonomic access.
+ */
+export type ResourceId<T extends BaseWebhookEvent = BaseWebhookEvent> = T['RessourceId']
 
 /**
  * Mangopay webhook event
