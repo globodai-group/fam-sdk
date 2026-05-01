@@ -29,9 +29,18 @@ export function isFamEvent(eventType: string): eventType is FamEventType {
  * Webhooks handler class
  */
 export class Webhooks {
-  private readonly signingSecret: string | undefined
+  private readonly signingSecret: string
 
-  constructor(config: WebhookHandlerConfig = {}) {
+  constructor(config: WebhookHandlerConfig) {
+    // Runtime guard: protects JS consumers (no compile-time types) from
+    // instantiating an unconfigured handler. The TS compiler already enforces
+    // signingSecret as required, hence the disable.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (config.signingSecret === undefined || config.signingSecret.length === 0) {
+      throw new WebhookSignatureError(
+        'Webhooks handler requires a non-empty signingSecret. Provide FAM_WEBHOOK_SIGNING_SECRET from the FAM admin (per environment).'
+      )
+    }
     this.signingSecret = config.signingSecret
   }
 
@@ -39,21 +48,12 @@ export class Webhooks {
    * Verify webhook signature
    */
   verify(payload: string, signature: string | undefined): boolean {
-    if (this.signingSecret === undefined) {
-      // No signing secret configured, skip verification
-      return true
-    }
-
     if (signature === undefined || signature.length === 0) {
       throw new WebhookSignatureError('Missing webhook signature')
     }
 
-    try {
-      const expectedSignature = this.computeSignature(payload)
-      return this.secureCompare(signature, expectedSignature)
-    } catch {
-      throw new WebhookSignatureError('Invalid webhook signature')
-    }
+    const expectedSignature = this.computeSignature(payload)
+    return this.secureCompare(signature, expectedSignature)
   }
 
   /**
@@ -96,10 +96,6 @@ export class Webhooks {
    * Compute HMAC signature
    */
   private computeSignature(payload: string): string {
-    if (this.signingSecret === undefined) {
-      throw new Error('Signing secret not configured')
-    }
-
     const hmac = createHmac('sha256', this.signingSecret)
     hmac.update(payload)
     return hmac.digest('hex')

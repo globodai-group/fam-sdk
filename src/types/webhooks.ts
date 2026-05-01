@@ -108,6 +108,11 @@ export type WebhookEvent = MangopayWebhookEvent | FamWebhookEvent
  * Webhook handler configuration
  */
 export interface WebhookHandlerConfig {
-  /** Secret key for signature verification */
-  signingSecret?: string
+  /**
+   * HMAC SHA-256 secret used to verify incoming webhook signatures.
+   * Provided per environment by the FAM admin at site ID creation
+   * (see FAM_WEBHOOK_SIGNING_SECRET in the SDK README).
+   * Required: instantiating Webhooks without it throws.
+   */
+  signingSecret: string
 }

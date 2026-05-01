@@ -28,9 +28,14 @@ describe('isFamEvent', () => {
 
 describe('Webhooks', () => {
   describe('constructor', () => {
-    it('should create webhooks handler without config', () => {
-      const handler = new Webhooks()
-      expect(handler).toBeInstanceOf(Webhooks)
+    it('should throw without a signing secret', () => {
+      expect(() => new Webhooks({} as unknown as { signingSecret: string })).toThrow(
+        WebhookSignatureError
+      )
+    })
+
+    it('should throw with an empty signing secret', () => {
+      expect(() => new Webhooks({ signingSecret: '' })).toThrow(WebhookSignatureError)
     })
 
     it('should create webhooks handler with signing secret', () => {
@@ -40,7 +45,7 @@ describe('Webhooks', () => {
   })
 
   describe('parse', () => {
-    const webhooks = new Webhooks()
+    const webhooks = new Webhooks({ signingSecret: 'secret' })
 
     it('should parse valid json string payload', () => {
       const payload = JSON.stringify({
@@ -78,20 +83,6 @@ describe('Webhooks', () => {
     })
   })
 
-  describe('verify without signing secret', () => {
-    const webhooks = new Webhooks()
-
-    it('should return true when no signing secret is configured', () => {
-      const result = webhooks.verify('any payload', 'any signature')
-      expect(result).toBe(true)
-    })
-
-    it('should return true even with undefined signature', () => {
-      const result = webhooks.verify('any payload', undefined)
-      expect(result).toBe(true)
-    })
-  })
-
   describe('verify with signing secret', () => {
     const signingSecret = 'test-secret-key'
     const webhooks = new Webhooks({ signingSecret })
@@ -107,21 +98,6 @@ describe('Webhooks', () => {
     it('should return false for invalid signature', () => {
       const result = webhooks.verify('payload', 'invalid-signature-that-is-long-enough')
       expect(result).toBe(false)
-    })
-  })
-
-  describe('constructEvent', () => {
-    const webhooks = new Webhooks() // No signing secret, so verify always passes
-
-    it('should construct event from valid payload', () => {
-      const payload = JSON.stringify({
-        EventType: 'PAYIN_NORMAL_SUCCEEDED',
-        RessourceId: '123456',
-        Date: 1234567890,
-      })
-
-      const event = webhooks.constructEvent(payload, 'any-signature')
-      expect(event.EventType).toBe('PAYIN_NORMAL_SUCCEEDED')
     })
   })
 
@@ -166,7 +142,7 @@ describe('Webhooks', () => {
   })
 
   describe('isEventType', () => {
-    const webhooks = new Webhooks()
+    const webhooks = new Webhooks({ signingSecret: 'secret' })
 
     it('should return true for matching event type', () => {
       const event = {
