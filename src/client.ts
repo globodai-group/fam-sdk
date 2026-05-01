@@ -10,6 +10,38 @@ import {
 } from './errors/index.js'
 import { buildUrl, retry } from './utils/index.js'
 
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1'])
+
+function assertSafeBaseUrl(rawBaseUrl: string): void {
+  let parsed: URL
+  try {
+    parsed = new URL(rawBaseUrl)
+  } catch {
+    throw new Error(
+      `Invalid baseUrl: ${rawBaseUrl} is not a valid URL. Provide an absolute URL such as https://api.fam.example`
+    )
+  }
+
+  if (parsed.protocol === 'https:') {
+    return
+  }
+
+  if (parsed.protocol === 'http:') {
+    const isLocalHost = LOCAL_HOSTS.has(parsed.hostname)
+    const isProduction = process.env['NODE_ENV'] === 'production'
+    if (isProduction || !isLocalHost) {
+      throw new Error(
+        `Insecure baseUrl: ${rawBaseUrl} uses http://. The FAM SDK refuses http:// outside of localhost development to prevent leaking the bearer token over the network. Use https:// in staging and production.`
+      )
+    }
+    return
+  }
+
+  throw new Error(
+    `Unsupported baseUrl protocol: ${parsed.protocol}. Only http (localhost only) and https are accepted.`
+  )
+}
+
 /**
  * SDK configuration options
  */
@@ -73,6 +105,7 @@ export class HttpClient {
   private publicKey: string | undefined
 
   constructor(options: FamOptions) {
+    assertSafeBaseUrl(options.baseUrl)
     this.baseUrl = options.baseUrl.replace(/\/$/, '')
     this.token = options.token
     this.publicKey = options.publicKey

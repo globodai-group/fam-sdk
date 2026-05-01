@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import { WebhookSignatureError } from '../errors/index.js'
 import { isFamEvent, isMangopayEvent, Webhooks } from '../webhooks/index.js'
@@ -27,24 +28,24 @@ describe('isFamEvent', () => {
 
 describe('Webhooks', () => {
   describe('constructor', () => {
-    it('should create webhooks handler without config', () => {
-      const handler = new Webhooks()
-      expect(handler).toBeInstanceOf(Webhooks)
+    it('should throw without a signing secret', () => {
+      expect(() => new Webhooks({} as unknown as { signingSecret: string })).toThrow(
+        WebhookSignatureError
+      )
+    })
+
+    it('should throw with an empty signing secret', () => {
+      expect(() => new Webhooks({ signingSecret: '' })).toThrow(WebhookSignatureError)
     })
 
     it('should create webhooks handler with signing secret', () => {
       const handler = new Webhooks({ signingSecret: 'secret' })
       expect(handler).toBeInstanceOf(Webhooks)
     })
-
-    it('should accept custom timestamp tolerance', () => {
-      const handler = new Webhooks({ timestampTolerance: 600 })
-      expect(handler).toBeInstanceOf(Webhooks)
-    })
   })
 
   describe('parse', () => {
-    const webhooks = new Webhooks()
+    const webhooks = new Webhooks({ signingSecret: 'secret' })
 
     it('should parse valid json string payload', () => {
       const payload = JSON.stringify({
@@ -82,20 +83,6 @@ describe('Webhooks', () => {
     })
   })
 
-  describe('verify without signing secret', () => {
-    const webhooks = new Webhooks()
-
-    it('should return true when no signing secret is configured', () => {
-      const result = webhooks.verify('any payload', 'any signature')
-      expect(result).toBe(true)
-    })
-
-    it('should return true even with undefined signature', () => {
-      const result = webhooks.verify('any payload', undefined)
-      expect(result).toBe(true)
-    })
-  })
-
   describe('verify with signing secret', () => {
     const signingSecret = 'test-secret-key'
     const webhooks = new Webhooks({ signingSecret })
@@ -108,65 +95,79 @@ describe('Webhooks', () => {
       expect(() => webhooks.verify('payload', '')).toThrow(WebhookSignatureError)
     })
 
-    it('should return false for invalid signature', () => {
-      const result = webhooks.verify('payload', 'invalid-signature-that-is-long-enough')
-      expect(result).toBe(false)
-    })
-  })
-
-  describe('verifyWithTimestamp', () => {
-    const webhooks = new Webhooks({ signingSecret: 'secret' })
-
-    it('should throw on expired timestamp', () => {
-      const now = Math.floor(Date.now() / 1000)
-      const oldTimestamp = now - 600 // 10 minutes ago
-
-      expect(() => webhooks.verifyWithTimestamp('payload', 'sig', oldTimestamp)).toThrow(
-        WebhookSignatureError
-      )
+    it('should return false for invalid signature of the right length', () => {
+      const wrong = 'a'.repeat(64)
+      expect(webhooks.verify('payload', wrong)).toBe(false)
     })
 
-    it('should throw on future timestamp beyond tolerance', () => {
-      const now = Math.floor(Date.now() / 1000)
-      const futureTimestamp = now + 600 // 10 minutes in future
-
-      expect(() => webhooks.verifyWithTimestamp('payload', 'sig', futureTimestamp)).toThrow(
-        WebhookSignatureError
-      )
-    })
-  })
-
-  describe('constructEvent', () => {
-    const webhooks = new Webhooks() // No signing secret, so verify always passes
-
-    it('should construct event from valid payload', () => {
-      const payload = JSON.stringify({
-        EventType: 'PAYIN_NORMAL_SUCCEEDED',
-        RessourceId: '123456',
-        Date: 1234567890,
-      })
-
-      const event = webhooks.constructEvent(payload, 'any-signature')
-      expect(event.EventType).toBe('PAYIN_NORMAL_SUCCEEDED')
+    it('should return false for signature of wrong length', () => {
+      expect(webhooks.verify('payload', 'short')).toBe(false)
     })
   })
 
   describe('constructEvent with signing secret', () => {
-    const webhooks = new Webhooks({ signingSecret: 'secret' })
+    const signingSecret = 'test-secret-key'
+    const webhooks = new Webhooks({ signingSecret })
+
+    const payload = JSON.stringify({
+      EventType: 'PAYIN_NORMAL_SUCCEEDED',
+      RessourceId: '123456',
+      Date: 1234567890,
+    })
+
+    const sign = (body: string, secret: string): string =>
+      createHmac('sha256', secret).update(body).digest('hex')
 
     it('should throw when signature is missing', () => {
-      const payload = JSON.stringify({
-        EventType: 'PAYIN_NORMAL_SUCCEEDED',
-        RessourceId: '123456',
-        Date: 1234567890,
-      })
-
       expect(() => webhooks.constructEvent(payload, undefined)).toThrow(WebhookSignatureError)
+    })
+
+    it('should throw when signature was computed with a different secret', () => {
+      const forgedSignature = sign(payload, 'wrong-secret')
+
+      expect(() => webhooks.constructEvent(payload, forgedSignature)).toThrow(WebhookSignatureError)
+    })
+
+    it('should throw when signature is the right length but garbage', () => {
+      const garbageSignature = 'a'.repeat(64)
+
+      expect(() => webhooks.constructEvent(payload, garbageSignature)).toThrow(
+        WebhookSignatureError
+      )
+    })
+
+    it('should construct event when signature is valid', () => {
+      const validSignature = sign(payload, signingSecret)
+
+      const event = webhooks.constructEvent(payload, validSignature)
+      expect(event.EventType).toBe('PAYIN_NORMAL_SUCCEEDED')
+      expect(event.RessourceId).toBe('123456')
+    })
+
+    it('should reject signature with non-hex characters of the right length', () => {
+      const garbage = 'z'.repeat(64)
+      expect(() => webhooks.constructEvent(payload, garbage)).toThrow(WebhookSignatureError)
+    })
+
+    it('should reject when payload is mutated after signing (replay of mutated body)', () => {
+      const validSignature = sign(payload, signingSecret)
+      const tampered = payload.replace('"123456"', '"999999"')
+      expect(() => webhooks.constructEvent(tampered, validSignature)).toThrow(WebhookSignatureError)
+    })
+
+    it('should reject very large payload signed with the wrong secret', () => {
+      const largeBody = JSON.stringify({
+        EventType: 'PAYIN_NORMAL_SUCCEEDED',
+        RessourceId: 'x'.repeat(100_000),
+        Date: 1,
+      })
+      const forged = sign(largeBody, 'not-the-secret')
+      expect(() => webhooks.constructEvent(largeBody, forged)).toThrow(WebhookSignatureError)
     })
   })
 
   describe('isEventType', () => {
-    const webhooks = new Webhooks()
+    const webhooks = new Webhooks({ signingSecret: 'secret' })
 
     it('should return true for matching event type', () => {
       const event = {
