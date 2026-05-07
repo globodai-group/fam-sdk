@@ -8,6 +8,7 @@ import {
   BundlesModule,
   CardRegistrationsModule,
   CardsModule,
+  IdvSessionsModule,
   KycModule,
   PayinsModule,
   PayoutsModule,
@@ -148,5 +149,12 @@ export class Fam {
    */
   scaRecipients(userId: string): ScaRecipientsModule {
     return new ScaRecipientsModule(this.client, userId)
+  }
+
+  /**
+   * Get IDV Sessions module for a specific user (Mangopay hosted KYC).
+   */
+  idvSessions(userId: string): IdvSessionsModule {
+    return new IdvSessionsModule(this.client, userId)
   }
 }

@@ -327,3 +327,27 @@ export interface ListPortalPaymentsResponse {
     limit: number
   }
 }
+
+/**
+ * A pending Mangopay SCA notification surfaced to the portal frontend so
+ * it can prompt the user (banner / link) to complete the strong customer
+ * authentication. The portal then redirects to `/sca-validate/:token`.
+ */
+export interface ScaPendingNotification {
+  notificationToken: string
+  action: string
+  amount: number | null
+  sentAt: string
+  expiresAt: string
+}
+
+/**
+ * Response from listing pending SCA notifications for the current portal
+ * user.
+ */
+export interface GetPendingScaNotificationsResponse {
+  success: boolean
+  data: {
+    pending: ScaPendingNotification[]
+  }
+}

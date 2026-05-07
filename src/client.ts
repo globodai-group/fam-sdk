@@ -330,10 +330,10 @@ export class HttpClient {
         throw new ApiError(message, 400, code, errorData)
 
       case 401:
-        throw new AuthenticationError(message)
+        throw new AuthenticationError(message, errorData)
 
       case 403:
-        throw new AuthorizationError(message)
+        throw new AuthorizationError(message, errorData)
 
       case 404:
         throw new NotFoundError(message)
