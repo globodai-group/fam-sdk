@@ -51,12 +51,16 @@ export class ApiError extends FamError {
 
 /**
  * Authentication error (401)
+ *
+ * Note: Mangopay SCA challenges also surface as 401 with a body shaped
+ * `{ error: 'sca_required', redirectUrl, scaContext, ... }`. Consumers
+ * can read `error.details` to drive the SCA redirect flow.
  */
 export class AuthenticationError extends ApiError {
   public override readonly name: string = 'AuthenticationError'
 
-  constructor(message = 'Authentication failed') {
-    super(message, 401, 'AUTHENTICATION_ERROR')
+  constructor(message = 'Authentication failed', details?: unknown) {
+    super(message, 401, 'AUTHENTICATION_ERROR', details)
   }
 }
 
@@ -66,8 +70,8 @@ export class AuthenticationError extends ApiError {
 export class AuthorizationError extends ApiError {
   public override readonly name: string = 'AuthorizationError'
 
-  constructor(message = 'Access denied') {
-    super(message, 403, 'AUTHORIZATION_ERROR')
+  constructor(message = 'Access denied', details?: unknown) {
+    super(message, 403, 'AUTHORIZATION_ERROR', details)
   }
 }
 

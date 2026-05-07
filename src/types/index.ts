@@ -110,6 +110,16 @@ export type {
   SubmitKycDocumentRequest,
 } from './kyc.js'
 
+// IDV Sessions types
+export type {
+  CreateIdvSessionRequest,
+  IdvCheck,
+  IdvCheckStatus,
+  IdvCheckType,
+  IdvSession,
+  IdvSessionStatus,
+} from './idv-sessions.js'
+
 // UBO types
 export type {
   CreateUboRequest,
@@ -196,6 +206,7 @@ export type {
   CreatePortalSessionRequest,
   CreatePortalSessionResponse,
   GetBillingInfoResponse,
+  GetPendingScaNotificationsResponse,
   GetPortalSessionStatusResponse,
   GetPortalUserResponse,
   ListPortalPaymentsResponse,
@@ -206,6 +217,7 @@ export type {
   PortalWebsiteConfig,
   RefreshPortalSessionResponse,
   SaveBillingInfoResponse,
+  ScaPendingNotification,
   ValidatePortalSessionRequest,
   ValidatePortalSessionResponse,
 } from './portal.js'
