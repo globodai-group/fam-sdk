@@ -24,6 +24,7 @@ import type {
   CreatePortalSessionRequest,
   CreatePortalSessionResponse,
   GetBillingInfoResponse,
+  GetPendingScaNotificationsResponse,
   GetPortalSessionStatusResponse,
   GetPortalUserResponse,
   ListPortalPaymentsResponse,
@@ -280,6 +281,34 @@ export class PortalModule extends BaseModule {
     const path = queryString ? `payments?${queryString}` : 'payments'
 
     return this.client.get<ListPortalPaymentsResponse>(this.path(path), {
+      headers: {
+        'X-Portal-Session': sessionToken,
+      },
+    })
+  }
+
+  /**
+   * List pending Mangopay SCA notifications for the current portal user.
+   *
+   * Returns the SCA challenges still actionable (not validated, not
+   * expired). The portal frontend uses this to render an "SCA pending"
+   * banner with a CTA pointing to `/sca-validate/:notificationToken`.
+   *
+   * @param sessionToken - The portal session token
+   * @returns Pending SCA notifications for the user behind the session
+   *
+   * @example
+   * ```typescript
+   * const { data } = await client.portal.getPendingScaNotifications('session-token')
+   * if (data.pending.length > 0) {
+   *   // show banner, link to /sca-validate/{data.pending[0].notificationToken}
+   * }
+   * ```
+   */
+  async getPendingScaNotifications(
+    sessionToken: string
+  ): Promise<GetPendingScaNotificationsResponse> {
+    return this.client.get<GetPendingScaNotificationsResponse>(this.path('sca/pending'), {
       headers: {
         'X-Portal-Session': sessionToken,
       },
