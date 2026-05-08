@@ -17,7 +17,7 @@ import type {
  */
 export class ScaRecipientsModule extends BaseModule {
   constructor(client: HttpClient, userId: string) {
-    super(client, `/api/v1/mangopay/users/${userId}/recipients`)
+    super(client, `/api/v1/mangopay/users/${userId}/sca/recipients`)
   }
 
   /**
