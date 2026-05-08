@@ -555,18 +555,30 @@ describe('ScaRecipientsModule', () => {
       },
     })
     expect(result.Id).toBe('recipient-123')
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.example.com/api/v1/mangopay/users/user-123/sca/recipients',
+      expect.objectContaining({ method: 'POST' })
+    )
   })
 
   it('should get recipient by id', async () => {
     mockSuccessResponse({ Id: 'recipient-123' })
     const result = await module.getRecipient('recipient-123')
     expect(result.Id).toBe('recipient-123')
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.example.com/api/v1/mangopay/users/user-123/sca/recipients/recipient-123',
+      expect.objectContaining({ method: 'GET' })
+    )
   })
 
   it('should list recipients', async () => {
     mockSuccessResponse({ data: [{ Id: 'recipient-1' }], pagination: {} })
     const result = await module.list()
     expect(result.data).toHaveLength(1)
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.example.com/api/v1/mangopay/users/user-123/sca/recipients',
+      expect.objectContaining({ method: 'GET' })
+    )
   })
 })
 
