@@ -47,9 +47,9 @@ describe('ScaNotificationsModule', () => {
       const result = await module.show(TOKEN)
 
       expect(mockFetch).toHaveBeenCalledOnce()
-      const callArgs = mockFetch.mock.calls[0]
+      const callArgs = mockFetch.mock.calls[0] as [string, RequestInit]
       expect(callArgs[0]).toContain(`/api/v1/sca/sca-notifications/${TOKEN}`)
-      expect(callArgs[1]?.method).toBe('GET')
+      expect(callArgs[1].method).toBe('GET')
       expect(result.notificationToken).toBe(TOKEN)
     })
   })
@@ -64,8 +64,8 @@ describe('ScaNotificationsModule', () => {
       expect(url).toContain(`/api/v1/sca/sca-notifications/${TOKEN}/redirect`)
       expect(init.method).toBe('POST')
       const body = JSON.parse(init.body as string) as Record<string, unknown>
-      expect(body.mangopayEnv).toBeNull()
-      expect(body.resourceId).toBeNull()
+      expect(body['mangopayEnv']).toBeNull()
+      expect(body['resourceId']).toBeNull()
       expect('returnUrl' in body).toBe(false)
     })
 
@@ -80,9 +80,9 @@ describe('ScaNotificationsModule', () => {
 
       const [, init] = mockFetch.mock.calls[0] as [string, RequestInit]
       const body = JSON.parse(init.body as string) as Record<string, unknown>
-      expect(body.mangopayEnv).toBe('prod')
-      expect(body.resourceId).toBe('payout-xyz')
-      expect(body.returnUrl).toBe('https://fidelio.app/sca/done?notif=' + TOKEN)
+      expect(body['mangopayEnv']).toBe('prod')
+      expect(body['resourceId']).toBe('payout-xyz')
+      expect(body['returnUrl']).toBe('https://fidelio.app/sca/done?notif=' + TOKEN)
     })
 
     it('omits returnUrl when set to null', async () => {
