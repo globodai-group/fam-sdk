@@ -222,6 +222,15 @@ export type {
   ValidatePortalSessionResponse,
 } from './portal.js'
 
+// SCA Notifications (token-gated capability endpoints)
+export type {
+  CreateScaRedirectInput,
+  CreateScaRedirectResponse,
+  GetScaNotificationResponse,
+  ScaNotificationData,
+  ValidateScaResponse,
+} from './sca-notifications.js'
+
 // Promotion types
 export type {
   Coupon,

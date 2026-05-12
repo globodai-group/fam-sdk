@@ -16,6 +16,7 @@ import {
   PreauthorizationsModule,
   ProductsModule,
   PromotionsModule,
+  ScaNotificationsModule,
   ScaRecipientsModule,
   SubscriptionsModule,
   TransfersModule,
@@ -71,6 +72,7 @@ export class Fam {
   public readonly products: ProductsModule
   public readonly promotions: PromotionsModule
   public readonly portal: PortalModule
+  public readonly scaNotifications: ScaNotificationsModule
 
   constructor(options: FamOptions) {
     this.client = new HttpClient(options)
@@ -93,6 +95,7 @@ export class Fam {
     this.products = new ProductsModule(this.client)
     this.promotions = new PromotionsModule(this.client)
     this.portal = new PortalModule(this.client)
+    this.scaNotifications = new ScaNotificationsModule(this.client)
   }
 
   /**
