@@ -19,6 +19,28 @@ function isKnownEventType(value: unknown): value is WebhookEventType {
   )
 }
 
+/**
+ * Coerce the wire-format `Date` field into a finite number.
+ *
+ * The FAM API forwards Mangopay webhooks by re-serializing the original
+ * querystring, which means numeric fields like `Date` arrive as strings on
+ * the wire (e.g. `"1778674861"`). Accept both shapes so downstream consumers
+ * see a typed `number` regardless of producer quirks, and fail loudly only
+ * when the value is genuinely missing or non-parseable.
+ */
+function coerceDate(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+  if (typeof value === 'string' && value.length > 0) {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed)) {
+      return parsed
+    }
+  }
+  throw new WebhookPayloadError('Invalid webhook payload: Date must be a finite number')
+}
+
 function assertWebhookEvent(candidate: unknown): WebhookEvent {
   if (typeof candidate !== 'object' || candidate === null || Array.isArray(candidate)) {
     throw new WebhookPayloadError('Invalid webhook payload: expected a JSON object')
@@ -36,9 +58,7 @@ function assertWebhookEvent(candidate: unknown): WebhookEvent {
     throw new WebhookPayloadError('Invalid webhook payload: RessourceId must be a non-empty string')
   }
 
-  if (typeof obj['Date'] !== 'number' || !Number.isFinite(obj['Date'])) {
-    throw new WebhookPayloadError('Invalid webhook payload: Date must be a finite number')
-  }
+  obj['Date'] = coerceDate(obj['Date'])
 
   if (
     obj['EventType'].startsWith('FAM_') &&
