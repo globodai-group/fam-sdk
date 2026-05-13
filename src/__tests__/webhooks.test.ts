@@ -147,6 +147,41 @@ describe('Webhooks', () => {
       })
       expect(() => webhooks.parse(payload)).not.toThrow(WebhookSignatureError)
     })
+
+    it('should coerce a numeric-string Date to a number (real-world FAM fixture)', () => {
+      // This is the exact payload shape FAM forwards on the wire: it
+      // re-serializes the original Mangopay querystring, so `Date` arrives
+      // as a numeric string. The SDK must accept it — anything stricter
+      // silently drops every payout/payin event in production.
+      const payload = JSON.stringify({
+        Date: '1778674861',
+        EventType: 'PAYOUT_NORMAL_FAILED',
+        RessourceId: 'po_m_01KRGMH1CKZHVXQ82NJ83PY1KK',
+      })
+      const event = webhooks.parse(payload)
+      expect(event.Date).toBe(1778674861)
+      expect(typeof event.Date).toBe('number')
+      expect(event.EventType).toBe('PAYOUT_NORMAL_FAILED')
+      expect(event.RessourceId).toBe('po_m_01KRGMH1CKZHVXQ82NJ83PY1KK')
+    })
+
+    it('should accept a Date passed as the string "0"', () => {
+      const payload = JSON.stringify({
+        EventType: 'PAYIN_NORMAL_SUCCEEDED',
+        RessourceId: 'res_1',
+        Date: '0',
+      })
+      expect(webhooks.parse(payload).Date).toBe(0)
+    })
+
+    it('should throw WebhookPayloadError when Date is an empty string', () => {
+      const payload = JSON.stringify({
+        EventType: 'PAYIN_NORMAL_SUCCEEDED',
+        RessourceId: 'res_1',
+        Date: '',
+      })
+      expect(() => webhooks.parse(payload)).toThrow(WebhookPayloadError)
+    })
   })
 
   describe('verify with signing secret', () => {
