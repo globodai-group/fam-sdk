@@ -1,7 +1,10 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
+    // tsup's dts build (rollup-plugin-dts) implicitly injects the now-deprecated
+    // `baseUrl` whenever `paths` is set. Until tsup stops doing so, opt into the
+    // TS 6.0 deprecation grace period so the declaration build keeps working.
+    "ignoreDeprecations": "6.0",
     "paths": {
       "globodai-fam-sdk": ["./src/index.ts"]
     }
