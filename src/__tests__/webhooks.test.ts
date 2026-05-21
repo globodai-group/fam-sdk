@@ -66,7 +66,7 @@ describe('Webhooks', () => {
         Date: 1234567890,
       }
 
-      const event = webhooks.parse(payload as unknown as string)
+      const event = webhooks.parse(payload)
       expect(event.EventType).toBe('PAYIN_NORMAL_SUCCEEDED')
     })
 
@@ -75,7 +75,7 @@ describe('Webhooks', () => {
     })
 
     it('should throw WebhookPayloadError on null payload', () => {
-      expect(() => webhooks.parse(null as unknown as string)).toThrow(WebhookPayloadError)
+      expect(() => webhooks.parse(null)).toThrow(WebhookPayloadError)
     })
 
     it('should throw WebhookPayloadError on undefined payload', () => {
@@ -389,9 +389,9 @@ describe('Webhooks', () => {
       expect(() => new Webhooks({ signingSecret, timestampTolerance: -10 })).toThrow(
         WebhookSignatureError
       )
-      expect(
-        () => new Webhooks({ signingSecret, timestampTolerance: Number.NaN as unknown as number })
-      ).toThrow(WebhookSignatureError)
+      expect(() => new Webhooks({ signingSecret, timestampTolerance: Number.NaN })).toThrow(
+        WebhookSignatureError
+      )
     })
 
     it('should ignore unknown signature schemes (e.g. v0, v2) for forward compatibility', () => {
