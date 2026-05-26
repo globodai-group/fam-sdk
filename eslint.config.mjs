@@ -1,6 +1,6 @@
 import eslint from '@eslint/js'
 import tseslint from 'typescript-eslint'
-import prettier from 'eslint-config-prettier'
+import prettier from 'eslint-config-prettier/flat'
 import unicorn from 'eslint-plugin-unicorn'
 import jsdoc from 'eslint-plugin-jsdoc'
 import importX from 'eslint-plugin-import-x'
