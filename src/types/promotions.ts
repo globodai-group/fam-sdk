@@ -43,6 +43,9 @@ export interface Coupon {
   redemptionsCount: number
   /** Product types this coupon applies to (empty = all) */
   appliesToProducts: string[] | null
+  /** External identifiers this coupon applies to (e.g. a specific
+   * subscription UUID in the client app). Empty = no restriction. */
+  appliesToExternalIds: string[] | null
   /** Minimum order amount in cents */
   minimumAmount: number | null
   /** When the coupon becomes valid */
@@ -136,6 +139,9 @@ export interface CreateCouponRequest {
   maxRedemptions?: number
   /** Product types this coupon applies to (empty = all) */
   appliesToProducts?: string[]
+  /** External identifiers this coupon applies to (e.g. a specific
+   * subscription UUID in the client app). Empty = no restriction. */
+  appliesToExternalIds?: string[]
   /** Minimum order amount in cents */
   minimumAmount?: number
   /** When the coupon becomes valid (default: now) */
@@ -152,6 +158,7 @@ export interface UpdateCouponRequest {
   name?: string
   maxRedemptions?: number | null
   appliesToProducts?: string[] | null
+  appliesToExternalIds?: string[] | null
   minimumAmount?: number | null
   validUntil?: string | null
   isActive?: boolean
@@ -196,6 +203,10 @@ export interface UpdatePromotionCodeRequest {
 export interface ValidatePromotionCodeRequest {
   code: string
   productType?: string
+  /** External identifier of the specific product (e.g. subscription UUID
+   * in the client app) — finer-grained than productType, used when a
+   * coupon is scoped to one specific item. */
+  productExternalId?: string
   /** Amount in cents */
   amount: number
 }
