@@ -1379,6 +1379,18 @@ const coupon = await fam.promotions.createCoupon({
   validUntil: '2024-12-31',
 });
 
+// Restrict to specific external IDs (e.g., specific subscription UUIDs from
+// your client app). The coupon is only accepted when the caller passes a
+// matching `productExternalId` during validation — empty list means no
+// external-ID restriction.
+const coupon = await fam.promotions.createCoupon({
+  name: 'Partner Special',
+  discountType: 'percent',
+  percentOff: 30,
+  duration: 'forever',
+  appliesToExternalIds: ['sub_uuid_1', 'sub_uuid_2'],
+});
+
 // Get and list coupons
 const coupon = await fam.promotions.getCoupon(couponId);
 const { coupons, meta } = await fam.promotions.listCoupons({ isActive: true });
@@ -1453,6 +1465,7 @@ await fam.promotions.deletePromotionCode(codeId);
 const validation = await fam.promotions.validateCode({
   code: 'WELCOME25',
   productType: 'mbc',  // Optional: check product eligibility
+  productExternalId: 'sub_uuid_xxx',  // Required if coupon restricts `appliesToExternalIds`
   amount: 2900,  // Amount in cents
 });
 
