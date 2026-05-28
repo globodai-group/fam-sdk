@@ -114,6 +114,10 @@ Rentimmo, Momentum, Freelance Ennemi, FAM Portal, etc.).
 > environment. The same `FAM_*` variable holds a different value in dev,
 > staging, and production.
 
+> **MangoPay user prerequisite.** Requires an existing MangoPay account per
+> end-user — pass both `mangopayUserId` and `walletId` on every user-scoped
+> call.
+
 Copy this `.env.example` into your project and fill it from the values you
 received:
 
