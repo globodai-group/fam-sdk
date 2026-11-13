@@ -109,6 +109,8 @@ Rentimmo, Momentum, Freelance Ennemi, FAM Portal, etc.).
 | `FAM_API_SECRET` | FAM admin at site ID creation | `Fam({ token })` | **Secret — backend only** |
 | `FAM_API_PUBLIC_KEY` | FAM admin at site ID creation | `Fam({ publicKey })` | Safe to embed in frontend / mobile bundles (GET-only) |
 | `FAM_WEBHOOK_SIGNING_SECRET` | FAM admin at site ID creation | `Webhooks({ signingSecret })` | **Secret — HMAC for inbound webhooks** |
+| `FAM_OWNER_USER` | Your MangoPay integrator account | Passed as `mangopayUserId` on user-scoped SDK calls | Public (identifier) |
+| `FAM_OWNER_WALLET` | Your MangoPay integrator account | Passed as `walletId` on user-scoped SDK calls | Public (identifier) |
 
 > **Per-environment secrets.** Ask the FAM admin for one site ID per
 > environment. The same `FAM_*` variable holds a different value in dev,
@@ -125,7 +127,26 @@ FAM_API_BASE_URL=https://api.sandbox.fam.com
 FAM_API_SECRET=fam_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 FAM_API_PUBLIC_KEY=fam_pk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 FAM_WEBHOOK_SIGNING_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Your MangoPay integrator (owner) account — used on user-scoped SDK calls.
+# Get these from your MangoPay dashboard.
+FAM_OWNER_USER=
+FAM_OWNER_WALLET=
 ```
+
+## Sandbox Testing
+
+When running against the sandbox environment, use MangoPay's test payment
+methods. The simplest one to start with:
+
+| Field | Value |
+| --- | --- |
+| Card number | `4970107111111119` |
+| Expiry date | Any future date (month/year) |
+| CVC | Any three digits |
+
+Full list (3DS scenarios, declined cards, other brands, SEPA, etc.):
+<https://docs.mangopay.com/testing/payment-methods>
 
 ## Quick Start
 
@@ -1358,6 +1379,18 @@ const coupon = await fam.promotions.createCoupon({
   validUntil: '2024-12-31',
 });
 
+// Restrict to specific external IDs (e.g., specific subscription UUIDs from
+// your client app). The coupon is only accepted when the caller passes a
+// matching `productExternalId` during validation — empty list means no
+// external-ID restriction.
+const coupon = await fam.promotions.createCoupon({
+  name: 'Partner Special',
+  discountType: 'percent',
+  percentOff: 30,
+  duration: 'forever',
+  appliesToExternalIds: ['sub_uuid_1', 'sub_uuid_2'],
+});
+
 // Get and list coupons
 const coupon = await fam.promotions.getCoupon(couponId);
 const { coupons, meta } = await fam.promotions.listCoupons({ isActive: true });
@@ -1432,6 +1465,7 @@ await fam.promotions.deletePromotionCode(codeId);
 const validation = await fam.promotions.validateCode({
   code: 'WELCOME25',
   productType: 'mbc',  // Optional: check product eligibility
+  productExternalId: 'sub_uuid_xxx',  // Required if coupon restricts `appliesToExternalIds`
   amount: 2900,  // Amount in cents
 });
 
